@@ -4,11 +4,13 @@
 #include <dirent.h>
 #include <list>
 #include <algorithm>
+#include <chrono>
 #include <unistd.h>
 #include <map>
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <ctime>
 
@@ -438,139 +440,47 @@ bool World::RemoveProperty(const std::string &name)
 
     return false;
 }
-
 void World::ParseArguments(const std::string& args, int start, std::vector<std::string>& params)
 {
-    int i = start;
-    const char* line = args.c_str();
-    int len = strlen(line);
+    if (start < 0) start = 0;
+    std::string_view sv(args);
+    if (static_cast<size_t>(start) >= sv.size()) return;
 
-    // parse arguments
-    for (; i < len; i++)
-        {
-            if (line[i] == ' ') continue;
-            // is it a quoated argument
-            if ((line[i] == '\'') || (line[i] == '"'))
-                {
-                    char match = line[i];
-                    i++;
-                    int arg_start = i;
-                    // loop until we reach the closing character
-                    for (; i < len; i++)
-                        {
-                            if (line[i] == match)
-                                {
-                                    break;
-                                }
-                        }
-//push the quoted string.
-                    params.push_back(args.substr(arg_start, i - arg_start));
-                }
+    size_t i = static_cast<size_t>(start);
+    const size_t n = sv.size();
 
-//no quoted string, get the entire argument until we see a space.
-            if (isprint(line[i]))
-                {
-                    int arg_start = i;
-                    for (; i < len; i++)
-                        {
-                            if ((line[i] == ' '))
-                                {
-                                    break;
-                                }
-                        }
-                    params.push_back(args.substr(arg_start, i - arg_start));
-                }
-        }
-}
-bool World::DoCommand(Player* mobile,std::string args)
-{
-    timeval start, end; //measure execution time
-    std::vector<Command*>* cptr = commands.GetPtr();
-    std::string cmd = ""; // the parsed command name
-    const char *line = args.c_str(); // the command line
-    int len = strlen(line); // get length of string
-    int i = 0; // counter
-    std::vector<std::string> params; // the parameters being passed to the command
-    //std::list<Command*>* externals; //external commands
+    while (i < n)
+    {
+        // skip spaces
+        while (i < n && sv[i] == ' ') ++i;
+        if (i >= n) break;
 
-//start measuring elapsed time.
-    gettimeofday(&start, nullptr);
+        // quoted argument?
+        if (sv[i] == '"' || sv[i] == '\'')
+        {
+            const char quote = sv[i++];
+            const size_t begin = i;
 
-//handle special commands.
-    if (args[0] == '\"' || args[0] == '\'')
-        {
-            cmd="say";
-            i = 1; //the arguments are just after the quote.
-        }
-    else if(args[0] == ':')
-        {
-            cmd="emote";
-            i=1;
-        }
-    else
-        {
-            // parse command name
-            for (i = 0; i < len; i++)
-                {
-                    if (line[i] == ' ') break;
-                }
-            // copy the command
-            cmd = args.substr(0, i);
+            // find closing quote (or end of string)
+            while (i < n && sv[i] != quote) ++i;
+
+            // push [begin, i)
+            params.emplace_back(std::string(sv.substr(begin, i - begin)));
+
+            // if we stopped on a quote, skip it
+            if (i < n && sv[i] == quote) ++i;
+
+            // continue to next token
+            continue;
         }
 
-    // are there any arguments to parse?
-    if (i != len)
-        {
-            ParseArguments(args, i, params);
-        }
+        // unquoted token: read until next space
+        const size_t begin = i;
+        while (i < n && sv[i] != ' ') ++i;
 
-//locate and execute the command:
-//check the built-in commands first, then contents, then location.
-    for (auto it: *cptr)
-        {
-            if ((it->GetName() == cmd)||(it->HasAlias(cmd, true)))
-                {
-                    if (!mobile->HasAccess(it->GetAccess()))
-                        {
-                            return false;
-                        }
-
-//execute command.
-                    /*todo: add script command handling here.*/
-                    it->Execute(it->GetName(), mobile, params, it->GetSubcmd());
-                    gettimeofday(&end, nullptr);
-                    _commandElapsed += ((end.tv_sec - start.tv_sec) * 1000000);
-                    _commandElapsed += (end.tv_usec-start.tv_usec);
-                    _commands ++;
-                    return true;
-                }
-        }
-//todo: check inventory and room commands here.
-    /*
-        location = (Room*)mobile->GetLocation();
-        if (location)
-            {
-                cptr = location->commands.GetPtr();
-                for (auto it: *cptr)
-                    {
-                        if ((it->GetName() == cmd)||(it->HasAlias(cmd, true)))
-                            {
-                                if (!mobile->HasAccess(it->GetAccess()))
-                                    {
-                                        return false;
-                                    }
-                                it->Execute(it->GetName(), mobile, params, it->GetSubcmd());
-                                gettimeofday(&end, NULL);
-                                _commandElapsed += ((end.tv_sec - start.tv_sec) * 1000000);
-                                _commandElapsed += (float)(end.tv_usec-start.tv_usec);
-                                _commands ++;
-                                return true;
-                            }
-
-                    }
-            }
-    */
-    return false;
+        params.emplace_back(std::string(sv.substr(begin, i - begin)));
+        // loop continues; trailing space is skipped by the next iteration
+    }
 }
 
 bool World::AddZone(Zone* zone)
@@ -790,4 +700,76 @@ unsigned long long int World::GetCommandTime() const
 ObjectManager* World::GetObjectManager()
 {
     return &_objectManager;
+}
+
+bool [[nodiscard]] World::DoCommand(Player* mobile, const std::string args)
+{
+    using clock = std::chrono::steady_clock;
+
+    if (args.empty())
+        return false;
+
+    const auto t0 = clock::now();
+
+    const std::vector<Command*>* cptr = commands.GetPtr();
+
+    std::string_view line(args);
+    std::string cmd;
+    size_t i = 0;
+
+    // special prefixes
+    const char first = line.front();
+    if (first == '"' || first == '\'')
+    {
+        cmd = "say";
+        i = 1;  // arguments start after the quote
+    }
+    else if (first == ':')
+    {
+        cmd = "emote";
+        i = 1;
+    }
+    else [[likely]]
+    {
+        // verb is up to first space (or whole string)
+        const size_t sp = line.find(' ');
+        if (sp == std::string_view::npos)
+        {
+            cmd.assign(line.begin(), line.end());
+            i = line.size();
+        }
+        else
+        {
+            cmd.assign(line.begin(), line.begin() + static_cast<std::ptrdiff_t>(sp));
+            i = sp;
+        }
+    }
+
+    // parse arguments if any
+    std::vector<std::string> params;
+    if (i < line.size())
+        ParseArguments(args, static_cast<int>(i), params);
+
+    // dispatch: built-ins first (inventory/room can mirror this block)
+    for (Command* c : *cptr)
+    {
+        // keep semantics: exact name or alias match
+        if (c->GetName() == cmd || c->HasAlias(cmd, true))
+        {
+            if (!mobile->HasAccess(c->GetAccess()))
+                return false;
+
+            // execute
+            c->Execute(c->GetName(), mobile, params, c->GetSubcmd());
+
+            const auto t1 = clock::now();
+            const auto us = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+            _commandElapsed += us;
+            _commands += 1;
+            return true;
+        }
+    }
+
+    // TODO: check inventory and room commands similarly
+    return false;
 }

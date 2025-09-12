@@ -198,7 +198,7 @@ public:
     *Returns: true on success, false on failure.
     */
     void ParseArguments(const std::string& args, int start, std::vector<std::string>& params);
-    bool DoCommand(Player* mobile, std::string args);
+    bool [[nodiscard]] DoCommand(Player* mobile, const std::string args);
 
     /*
     *Matching methods.
