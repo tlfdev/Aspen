@@ -48,9 +48,8 @@ void TelnetParser::Parse()
     unsigned char option = 0;
     unsigned char* start = nullptr;
     unsigned char* end = nullptr;
-    unsigned int counter = 0;
 
-    for (counter = 0; counter < _size; ++counter)
+    for (unsigned int counter = 0; counter < _size; ++counter)
         {
             cur = _buff[counter];
 //possible: iac iac or iac option.
@@ -66,6 +65,7 @@ void TelnetParser::Parse()
                         {
                             *w = TELNET_IAC;
                             ++w;
+                            _state = 0;
                             continue;
                         }
                 }
@@ -84,7 +84,7 @@ void TelnetParser::Parse()
                             continue;
                         }
 //sequence end
-                    else if(cur == TELNET_SE && start != end && option)
+                    else if(cur == TELNET_SE && start != nullptr && option)
                         {
                             NegotiationEventArgs args(option, start, (unsigned int)(end-start)+1);
                             events.CallEvent("OnNegotiation", &args, static_cast<void*>(this));

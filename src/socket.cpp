@@ -238,7 +238,7 @@ void Socket::OnNegotiation(EventArgs* args)
 bool Socket::InitCompression()
 {
     int ret = 0;
-
+cbuff = new unsigned char[MCCP_BUFFER_SIZE];
     zstream.zalloc = nullptr;
     zstream.zfree = nullptr;
     zstream.opaque = nullptr;
@@ -251,7 +251,7 @@ bool Socket::InitCompression()
         {
             return false;
         }
-    cbuff = new unsigned char[MCCP_BUFFER_SIZE];
+    
     _compressing = true;
     return true;
 }
@@ -783,7 +783,7 @@ bool Socket::HandleVerpassInput()
             return true;
         }
 
-    Write(TELNET_ECHO_OFF);
+    Write(TELNET_ECHO_ON);
     Write("What is your gender? Please enter male or female.\n");
     SetConnectionType(CON_Gender);
 

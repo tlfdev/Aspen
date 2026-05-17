@@ -58,16 +58,16 @@ CMDMkwiz::CMDMkwiz()
 }
 bool CMDMkwiz::Execute(const std::string &verb, Player* mobile,std::vector<std::string> &args,int subcmd)
 {
-    World* world = World::GetPtr();
-    PlayerManager& manager = world->GetPlayerManager();
-    Player* target = nullptr;
-
     if (!args.size())
         {
             mobile->Message(MSG_ERROR,"You must specify the person that you would like to make a wizard.\n");
             return false;
         }
 
+    World* world = World::GetPtr();
+    PlayerManager& manager = world->GetPlayerManager();
+    Player* target = nullptr;
+    
     target=manager.FindPlayer(args[0]);
     if (target==mobile)
         {
@@ -85,7 +85,7 @@ bool CMDMkwiz::Execute(const std::string &verb, Player* mobile,std::vector<std::
             return false;
         }
 
-    target->SetRank(BitSet(mobile->GetRank(), RANK_BUILDER|RANK_ADMIN|RANK_GOD));
+    target->SetRank(BitSet(target->GetRank(), RANK_BUILDER|RANK_ADMIN|RANK_GOD));
     target->Message(MSG_INFO,"You suddenly feel more wizardly.");
     mobile->Message(MSG_INFO, Capitalize(target->GetName())+" has been made a wizard.");
     return true;
@@ -99,17 +99,16 @@ CMDMkbuilder::CMDMkbuilder()
 }
 bool CMDMkbuilder::Execute(const std::string &verb, Player* mobile,std::vector<std::string> &args,int subcmd)
 {
-    World* world = World::GetPtr();
-    PlayerManager& manager = world->GetPlayerManager();
-    Player* target = nullptr;
-
     if (!args.size())
         {
             mobile->Message(MSG_ERROR,"You must specify the person that you would like to make a builder.\n");
             return false;
         }
 
-    target=manager.FindPlayer(args[0]);
+    World* world = World::GetPtr();
+    PlayerManager& manager = world->GetPlayerManager();
+    
+    auto target=manager.FindPlayer(args[0]);
     if (target==nullptr)
         {
             mobile->Message(MSG_ERROR,"That person couldn't be found.");
@@ -126,7 +125,7 @@ bool CMDMkbuilder::Execute(const std::string &verb, Player* mobile,std::vector<s
             return false;
         }
 
-    target->SetRank(BitSet(mobile->GetRank(),RANK_BUILDER));
+    target->SetRank(BitSet(target->GetRank(),RANK_BUILDER));
     target->Message(MSG_INFO,"You were made a builder.");
     mobile->Message(MSG_INFO, Capitalize(target->GetName())+" was made a builder.");
     return true;
@@ -196,17 +195,16 @@ CMDSilence::CMDSilence()
 }
 bool CMDSilence::Execute(const std::string &verb, Player* mobile,std::vector<std::string> &args,int subcmd)
 {
-    World* world = World::GetPtr();
-    PlayerManager& manager = world->GetPlayerManager();
-    Player* targ = nullptr;
-
     if (!args.size())
         {
             mobile->Message(MSG_ERROR, "Syntax: silence <player>");
             return false;
         }
 
-    targ = manager.FindPlayer(args[0]);
+    World* world = World::GetPtr();
+    PlayerManager& manager = world->GetPlayerManager();
+    
+    auto targ = manager.FindPlayer(args[0]);
     if (!targ)
         {
             mobile->Message(MSG_ERROR, "Could not find the specified player.");
@@ -218,7 +216,7 @@ bool CMDSilence::Execute(const std::string &verb, Player* mobile,std::vector<std
             return false;
         }
 
-    if (BitIsSet(mobile->GetPflag(), PF_SILENCE))
+    if (BitIsSet(targ->GetPflag(), PF_SILENCE))
         {
             mobile->Message(MSG_ERROR, "That player has already been silenced.");
             return false;
@@ -239,17 +237,16 @@ CMDUnsilence::CMDUnsilence()
 }
 bool CMDUnsilence::Execute(const std::string &verb, Player* mobile,std::vector<std::string> &args,int subcmd)
 {
-    World* world = World::GetPtr();
-    PlayerManager& manager = world->GetPlayerManager();
-    Player* targ = nullptr;
-
     if (!args.size())
         {
             mobile->Message(MSG_ERROR, "Syntax: unsilence <player>");
             return false;
         }
 
-    targ = manager.FindPlayer(args[0]);
+    World* world = World::GetPtr();
+    PlayerManager& manager = world->GetPlayerManager();
+    
+    auto targ = manager.FindPlayer(args[0]);
     if (!targ)
         {
             mobile->Message(MSG_ERROR, "Could not find the specified player.");
@@ -261,7 +258,7 @@ bool CMDUnsilence::Execute(const std::string &verb, Player* mobile,std::vector<s
             return false;
         }
 
-    targ->SetPflag(BitClear(mobile->GetPflag(), PF_SILENCE));
+    targ->SetPflag(BitClear(targ->GetPflag(), PF_SILENCE));
     mobile->Message(MSG_INFO, Capitalize(targ->GetName())+" has been unsilenced.");
     WriteLog(Capitalize(targ->GetName())+" was unsilenced by "+Capitalize(mobile->GetName())+".");
     targ->Message(MSG_INFO, "You were unsilenced by "+Capitalize(mobile->GetName())+".");
