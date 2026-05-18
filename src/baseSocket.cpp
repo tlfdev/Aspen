@@ -1,32 +1,30 @@
+#include "baseSocket.h"
+
+#include "conf.h"
+#include "mud.h"
+
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <string>
+
+#include <ctype.h>
+#include <errno.h>
 #include <unistd.h>
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <ctype.h>
-#include <string>
-#include <ctime>
-#include <cstring>
-#include <cstdlib>
-#include "mud.h"
-#include "conf.h"
-#include "baseSocket.h"
 
-BaseSocket::BaseSocket():
-    _control(-1)
-{
-}
-BaseSocket::BaseSocket(int desc):
-    _control(desc)
-{
-}
+BaseSocket::BaseSocket() : _control(-1) {}
+BaseSocket::BaseSocket(int desc) : _control(desc) {}
 BaseSocket::~BaseSocket()
 {
     if (_control != -1)
-        {
-            close(_control);
-            _control = -1;
-        }
+    {
+        close(_control);
+        _control = -1;
+    }
 }
 
 int BaseSocket::GetControl() const
@@ -42,34 +40,34 @@ bool BaseSocket::Read()
     std::string line;
 
     while (true)
+    {
+        size = recv(_control, temp, 4096, 0);
+        if (size > 0)
         {
-            size = recv(_control, temp, 4096, 0);
-            if (size > 0)
-                {
-                    temp[size] = '\0'; //sets the last byte we received to null.
-//iterate through the list and add that to the std::string
-                    for (k=0; k<size; k++)
-                        {
-                            _inBuffer+=temp[k];
-                        }
-                }
-            else if (size == 0)
-                {
-                    return false;
-                }
-            else if (errno == EAGAIN || size == 4096)
-                {
-                    break;
-                }
-            else
-                {
-                    return false;
-                }
+            temp[size] = '\0'; // sets the last byte we received to null.
+            // iterate through the list and add that to the std::string
+            for (k = 0; k < size; k++)
+            {
+                _inBuffer += temp[k];
+            }
         }
+        else if (size == 0)
+        {
+            return false;
+        }
+        else if (errno == EAGAIN)
+        {
+            break;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     return true;
 }
-void BaseSocket::Write(const std::string &txt)
+void BaseSocket::Write(const std::string& txt)
 {
     _outBuffer += txt;
 }
@@ -87,28 +85,28 @@ size_t BaseSocket::Write(const void* buffer, size_t count)
 
 bool BaseSocket::Flush()
 {
-    int b=0;
+    int b = 0;
     int w = 0;
 
     if (!_outBuffer.length())
-        {
-            return true;
-        }
+    {
+        return true;
+    }
 
     while (_outBuffer.length() > 0)
+    {
+        b = (_outBuffer.length() < 4096) ? _outBuffer.length() : 4096;
+        // any write failures ?
+        if (_control != -1)
         {
-            b = (_outBuffer.length() < 4096) ? _outBuffer.length() : 4096;
-            // any write failures ?
-            if (_control!=-1)
-                {
-                    if ((w = send(_control, _outBuffer.c_str(), b, 0)) == -1)
-                        {
-                            return false;
-                        }
-                }
-            // move the buffer down
-            _outBuffer.erase(0, w);
+            if ((w = send(_control, _outBuffer.c_str(), b, 0)) == -1)
+            {
+                return false;
+            }
         }
+        // move the buffer down
+        _outBuffer.erase(0, w);
+    }
 
     return true;
 }
@@ -138,38 +136,38 @@ void BaseSocket::SetAddr(sockaddr_in* addr)
 bool BaseSocket::Close()
 {
     if (_control != -1)
-        {
-            close(_control);
-            _control = -1;
-            return true;
-        }
+    {
+        close(_control);
+        _control = -1;
+        return true;
+    }
 
     return false;
 }
 bool BaseSocket::Connect(const char* address, unsigned short port)
 {
     if (_control != -1)
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
     memset(&_addr, 0, sizeof(sockaddr_in));
     if (!inet_aton(address, &_addr.sin_addr))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
     _addr.sin_family = AF_INET;
     _addr.sin_port = htons(port);
     _control = socket(AF_INET, SOCK_STREAM, 0);
 
     if (_control == -1)
-        {
-            return false;
-        }
+    {
+        return false;
+    }
     if (connect(_control, (sockaddr*)&_addr, sizeof(sockaddr_in)) == -1)
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
     return true;
 }
