@@ -1,20 +1,27 @@
 #pragma once
 #include <tinyxml2.h>
+
 #include <string>
+
+#include <json/json.h>
 
 class Uuid
 {
-protected:
+  protected:
     unsigned long long int _id;
-public:
+
+  public:
     Uuid();
-    Uuid(const Uuid &u);
+    Uuid(const Uuid& u);
     ~Uuid();
     void Initialize();
     std::string ToString() const;
     unsigned long long int GetValue() const;
-    void Serialize(tinyxml2::XMLElement* root);
-    void Deserialize(tinyxml2::XMLElement* root);
-    Uuid& operator =(Uuid& u);
-    bool operator ==(Uuid& u);
+
+    // JSON serialization
+    void ToJson(Json::Value& json) const;
+    void FromJson(const Json::Value& json, int version);
+
+    Uuid& operator=(Uuid& u);
+    bool operator==(Uuid& u);
 };

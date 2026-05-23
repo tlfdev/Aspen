@@ -32,6 +32,7 @@ SET(SOURCE
   exception.cpp
   exit.cpp
   inputHandlers.cpp
+  jsonSerializer.cpp
   listener.cpp
   living.cpp
 log.cpp
@@ -118,6 +119,7 @@ set(HEADERS
   exception.h
   exit.h
   inputHandlers.h
+  jsonSerializer.h
   listener.h
   living.h
 log.h

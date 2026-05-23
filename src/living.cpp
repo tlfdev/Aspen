@@ -1,9 +1,11 @@
-#include <tinyxml2.h>
-#include "mud.h"
 #include "living.h"
-#include "event.h"
+
 #include "delayedEvent.h"
+#include "event.h"
+#include "mud.h"
 #include "world.h"
+
+#include <tinyxml2.h>
 
 Living::Living()
 {
@@ -14,12 +16,8 @@ Living::Living()
     _following = nullptr;
 }
 
-void Living::EnterGame()
-{
-}
-void Living::LeaveGame()
-{
-}
+void Living::EnterGame() {}
+void Living::LeaveGame() {}
 
 void Living::Update()
 {
@@ -54,38 +52,46 @@ bool Living::AddAttribute(Attribute* attr)
     _attributes.push_back(attr);
     return true;
 }
-void Living::FindAttribute(int apply, int id, std::vector<Attribute*> &results)
+void Living::FindAttribute(int apply, int id, std::vector<Attribute*>& results)
 {
-    for (Attribute* attr: _attributes)
+    for (Attribute* attr : _attributes)
+    {
+        if (attr->GetApply() == apply && attr->GetId() == id)
         {
-            if (attr->GetApply() == apply && attr->GetId() == id)
-                {
-                    results.push_back(attr);
-                }
+            results.push_back(attr);
         }
+    }
 }
 void Living::FindAttribute(int type, std::vector<Attribute*>& results)
 {
-    for (Attribute* attr:_attributes)
+    for (Attribute* attr : _attributes)
+    {
+        if (attr->GetType() == type)
         {
-            if (attr->GetType() == type)
-                {
-                    results.push_back(attr);
-                }
+            results.push_back(attr);
         }
+    }
 }
 
-void Living::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void Living::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* node = doc->NewElement("living");
+    // Serialize base entity
+    Entity::ToJson(json);
 
-    node->SetAttribute("gender", (int)_gender);
-    Entity::Serialize(node);
-    root->InsertEndChild(node);
+    // Serialize Living-specific fields
+    json["gender"] = static_cast<int>(_gender);
+    json["position"] = _position;
 }
-void Living::Deserialize(tinyxml2::XMLElement* root)
+
+void Living::FromJson(const Json::Value& json, int version)
 {
-    _gender = (Gender)root->IntAttribute("gender");
-    Entity::Deserialize(root->FirstChildElement("entity"));
+    using namespace JsonSerializerHelpers;
+
+    // Deserialize base entity
+    Entity::FromJson(json, version);
+
+    // Deserialize Living-specific fields
+    _gender = static_cast<Gender>(GetInt(json, "gender", static_cast<int>(Gender::Neuter)));
+    _position = GetUInt(json, "position", POSITION_STANDING);
 }

@@ -1,36 +1,46 @@
 /*
-*This class is used to hold variables.
-*It allows the user to specify the type for the variable.
-*Also allows for serialization and deserialization, so they can be stored.
-*/
+ *This class is used to hold variables.
+ *It allows the user to specify the type for the variable.
+ *Also allows for serialization and deserialization, so they can be stored.
+ */
 #ifndef VARIANT_H
 #define VARIANT_H
-#include <tinyxml2.h>
-#include "mud.h"
 #include "conf.h"
 #include "exception.h"
+#include "mud.h"
 
-//exceptions
+#include <tinyxml2.h>
+
+#include <json/json.h>
+
+// exceptions
 /*
-*Used for operations on an empty variable.
-*/
-class VariableEmptyException:public Exception
+ *Used for operations on an empty variable.
+ */
+class VariableEmptyException : public Exception
 {
-public:
-    VariableEmptyException(const std::string &msg):Exception(msg) { }
+  public:
+    VariableEmptyException(const std::string& msg) : Exception(msg) {}
 };
 /*
-*Used when operations are performed on an invalid variable type.
-*For example: var++, when var is a string.
-*/
-class InvalidVariableTypeException:public Exception
+ *Used when operations are performed on an invalid variable type.
+ *For example: var++, when var is a string.
+ */
+class InvalidVariableTypeException : public Exception
 {
-public:
-    InvalidVariableTypeException(const std::string &msg):Exception(msg) { }
+  public:
+    InvalidVariableTypeException(const std::string& msg) : Exception(msg) {}
 };
 
-//variable types
-enum VARIABLE_TYPE { VAR_EMPTY, VAR_BYTE, VAR_INT, VAR_DOUBLE, VAR_STR};
+// variable types
+enum VARIABLE_TYPE
+{
+    VAR_EMPTY,
+    VAR_BYTE,
+    VAR_INT,
+    VAR_DOUBLE,
+    VAR_STR
+};
 
 class Variant
 {
@@ -42,32 +52,33 @@ class Variant
     };
     std::string str;
     VARIABLE_TYPE type;
-public:
+
+  public:
     Variant();
-    Variant(const Variant &var);
+    Variant(const Variant& var);
     Variant(int s);
     Variant(char s);
-    Variant(const std::string &s);
+    Variant(const std::string& s);
     Variant(const char* s);
     Variant(double s);
 
     /*
-    *Returns the type of the variable.
-    */
+     *Returns the type of the variable.
+     */
     VARIABLE_TYPE Typeof() const;
 
-//getters
+    // getters
     int GetInt() const;
     char GetByte() const;
     std::string GetStr() const;
     double GetDouble() const;
-//setters
+    // setters
     void SetInt(int s);
     void SetByte(char s);
     void SetDouble(double s);
-    void SetStr(const std::string &s);
+    void SetStr(const std::string& s);
     void SetStr(const char* s);
-//type checks
+    // type checks
     bool IsEmpty() const;
     bool IsInt() const;
     bool IsByte() const;
@@ -80,7 +91,7 @@ public:
     T Get() const
     {
         switch (type)
-            {
+        {
             case VAR_INT:
                 return i32;
                 break;
@@ -99,25 +110,25 @@ public:
             default:
                 throw(Exception("Unknown variable type."));
                 break;
-            }
+        }
     }
 
-    bool Compare(const Variant &var) const;
+    bool Compare(const Variant& var) const;
 
-//operator overloads
-    bool operator ==(const Variant &var);
-    bool operator !=(const Variant &var);
-//assignment overloads
-    Variant& operator =(int s);
-    Variant& operator =(char s);
-    Variant& operator =(double s);
-    Variant& operator =(std::string s);
+    // operator overloads
+    bool operator==(const Variant& var);
+    bool operator!=(const Variant& var);
+    // assignment overloads
+    Variant& operator=(int s);
+    Variant& operator=(char s);
+    Variant& operator=(double s);
+    Variant& operator=(std::string s);
 
     template <class T>
-    T operator ()()const
+    T operator()() const
     {
-        switch(type)
-            {
+        switch (type)
+        {
             case VAR_INT:
                 return (GetInt());
                 break;
@@ -134,30 +145,32 @@ public:
             default:
                 throw(Exception("Tried to get invalid variable type."));
                 break;
-            }
+        }
     }
     void SetType(VARIABLE_TYPE t);
 
-//serialization
-    void Serialize(tinyxml2::XMLElement* var);
-    void Deserialize(tinyxml2::XMLElement* var);
-//math operator overloads:
-//prefix ++ and --
-    Variant& operator ++();
-    Variant& operator --();
-    Variant operator +(Variant var);
-    Variant& operator +=(Variant var);
-    Variant operator -(Variant var);
-    Variant& operator -=(Variant var);
-    Variant operator *(Variant var);
-    Variant& operator *=(Variant var);
-    Variant operator /(Variant var);
-    Variant& operator /=(Variant var);
-    Variant operator %(Variant var);
-    Variant& operator %=(Variant var);
-    bool operator <(Variant var);
-    bool operator <=(Variant var);
-    bool operator >(Variant var);
-    bool operator >=(Variant var);
+    // serialization
+    //  JSON serialization
+    void ToJson(Json::Value& json) const;
+    void FromJson(const Json::Value& json, int version);
+
+    // math operator overloads:
+    // prefix ++ and --
+    Variant& operator++();
+    Variant& operator--();
+    Variant operator+(Variant var);
+    Variant& operator+=(Variant var);
+    Variant operator-(Variant var);
+    Variant& operator-=(Variant var);
+    Variant operator*(Variant var);
+    Variant& operator*=(Variant var);
+    Variant operator/(Variant var);
+    Variant& operator/=(Variant var);
+    Variant operator%(Variant var);
+    Variant& operator%=(Variant var);
+    bool operator<(Variant var);
+    bool operator<=(Variant var);
+    bool operator>(Variant var);
+    bool operator>=(Variant var);
 };
 #endif

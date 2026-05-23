@@ -1,11 +1,14 @@
-#include <tinyxml2.h>
-#include <list>
-#include "mud.h"
-#include "conf.h"
-#include "baseObject.h"
 #include "objectContainer.h"
+
+#include "baseObject.h"
+#include "conf.h"
 #include "entity.h"
+#include "mud.h"
 #include "serializationHelpers.h"
+
+#include <tinyxml2.h>
+
+#include <list>
 
 std::list<Entity*>* ObjectContainer::GetContents()
 {
@@ -22,35 +25,47 @@ void ObjectContainer::ObjectLeave(Entity* obj)
 
     itEnd = _contents.end();
     for (it = _contents.begin(); it != itEnd; ++it)
+    {
+        if ((*it) == obj)
         {
-            if ((*it) == obj)
-                {
-                    it = _contents.erase(it);
-                    break;
-                }
+            it = _contents.erase(it);
+            break;
         }
+    }
 }
 void ObjectContainer::ObjectEnter(Entity* obj)
 {
     _contents.push_back(obj);
 }
 
-void ObjectContainer::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void ObjectContainer::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* ent = doc->NewElement("objc");
-    BaseObject::Serialize(ent);
+    using namespace JsonSerializerHelpers;
 
-    SerializeList<Entity, std::list<Entity*>>("contents", ent, _contents);
-    root->InsertEndChild(ent);
+    // Serialize base object
+    BaseObject::ToJson(json);
+
+    // Serialize contents
+    SerializeList<Entity>(json, "contents", _contents);
 }
-void ObjectContainer::Deserialize(tinyxml2::XMLElement* root)
-{
-    DeserializeList<Entity, std::list<Entity*>>(root, "contents", _contents);
-    for (auto it: _contents)
-        {
-            it->SetLocation(this);
-        }
 
-    BaseObject::Deserialize(root->FirstChildElement("BaseObject"));
+void ObjectContainer::FromJson(const Json::Value& json, int version)
+{
+    using namespace JsonSerializerHelpers;
+
+    // Deserialize base object
+    BaseObject::FromJson(json, version);
+
+    // Deserialize contents
+    DeserializeList<Entity>(json, "contents", _contents, version);
+
+    // Set locations
+    for (auto* item : _contents)
+    {
+        if (item)
+        {
+            item->SetLocation(this);
+        }
+    }
 }

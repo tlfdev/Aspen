@@ -1,24 +1,25 @@
 /**
-* Contains: Living
-*/
+ * Contains: Living
+ */
 #pragma once
 #ifndef LIVING_H
-#define LIVING_H
-#include <tinyxml2.h>
-#include <queue>
-#include <vector>
+    #define LIVING_H
+    #include "affect.h"
+    #include "attribute.h"
+    #include "entity.h"
+    #include "event.h"
+    #include "mud.h"
 
-#include "mud.h"
-#include "event.h"
-#include "entity.h"
-#include "attribute.h"
-#include "affect.h"
+    #include <tinyxml2.h>
+
+    #include <queue>
+    #include <vector>
 
 /**
-* Affect comparison.
-*
-* This functor is used to compare affects in the priority queue.
-*/
+ * Affect comparison.
+ *
+ * This functor is used to compare affects in the priority queue.
+ */
 struct _aff_comp
 {
     bool operator()(Affect* a, Affect* b)
@@ -28,18 +29,19 @@ struct _aff_comp
 };
 
 /**
-* Gender of the object.
-*/
+ * Gender of the object.
+ */
 enum class Gender
 {
-    Male=1,
-    Female, Neuter
+    Male = 1,
+    Female,
+    Neuter
 };
 
 /**
-* Objects which should be sentient or alive (players, NPCS) should inherit this.
-*/
-class Living:public Entity
+ * Objects which should be sentient or alive (players, NPCS) should inherit this.
+ */
+class Living : public Entity
 {
     unsigned int _position;
     Gender _gender;
@@ -48,41 +50,42 @@ class Living:public Entity
     std::vector<Affect*> _paffects;
     Living* _following;
     std::list<Living*> _followers;
-public:
+
+  public:
     Living();
     virtual ~Living() = default;
 
     /**
-    * This is called when an object enters or leaves the game environment
-    */
+     * This is called when an object enters or leaves the game environment
+     */
     virtual void EnterGame();
     /**
-    * This is called when the object leaves the game environment.
-    */
+     * This is called when the object leaves the game environment.
+     */
     virtual void LeaveGame();
 
     /**
-    * This is called whenever the living is pulsed.
-    */
+     * This is called whenever the living is pulsed.
+     */
     virtual void Update();
     /**
-    * Overwritten to note that this is a living object.
-    */
+     * Overwritten to note that this is a living object.
+     */
     bool IsLiving() const;
 
     Gender GetGender() const;
     void SetGender(Gender gender);
     /**
-    * Retrieves the position of the living.
-    */
+     * Retrieves the position of the living.
+     */
     unsigned int GetPosition() const;
     /**
-    * sets the position for this object.
-    * \param [in] the position.
-    */
+     * sets the position for this object.
+     * \param [in] the position.
+     */
     void SetPosition(unsigned int pos);
     bool AddAttribute(Attribute* attr);
-    void FindAttribute(int apply, int id, std::vector<Attribute*> &results);
+    void FindAttribute(int apply, int id, std::vector<Attribute*>& results);
     void FindAttribute(int type, std::vector<Attribute*>& results);
     /***
     This is called to determine if follower can follow.
@@ -90,7 +93,13 @@ public:
     */
     bool CanFollow(Living* follower);
 
-    virtual void Serialize(tinyxml2::XMLElement* root);
-    virtual void Deserialize(tinyxml2::XMLElement* root);
+    // JSON serialization
+    virtual void ToJson(Json::Value& json) const override;
+    virtual void FromJson(const Json::Value& json, int version) override;
+    virtual int GetSerializationVersion() const override
+    {
+        return 1;
+    }
 };
-#endif
+
+#endif // LIVING_H

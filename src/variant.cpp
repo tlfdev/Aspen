@@ -237,57 +237,67 @@ void Variant::SetType(VARIABLE_TYPE t)
     type = t;
 }
 
-void Variant::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void Variant::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* var = doc->NewElement("variable");
-    var->SetAttribute("type", (int)Typeof());
+    json["type"] = static_cast<int>(type);
 
     switch (type)
     {
         case VAR_INT:
-            var->SetAttribute("value", i32);
+            json["value"] = i32;
             break;
         case VAR_BYTE:
-            var->SetAttribute("value", byte);
+            json["value"] = static_cast<int>(byte);
             break;
         case VAR_STR:
-            var->SetAttribute("value", str.c_str());
+            json["value"] = str;
             break;
         case VAR_DOUBLE:
-            var->SetAttribute("value", d);
+            json["value"] = d;
             break;
         case VAR_EMPTY:
-            var->SetAttribute("value", 0);
+            json["value"] = Json::Value::null;
             break;
         default:
-            // should we error here?
             break;
     }
-    root->InsertEndChild(var);
 }
-void Variant::Deserialize(tinyxml2::XMLElement* var)
+
+void Variant::FromJson(const Json::Value& json, int version)
 {
-    type = (VARIABLE_TYPE)(var->IntAttribute("type"));
+    if (json.isMember("type"))
+    {
+        type = static_cast<VARIABLE_TYPE>(json["type"].asInt());
+    }
+    else
+    {
+        type = VAR_EMPTY;
+    }
+
+    if (!json.isMember("value"))
+    {
+        return;
+    }
+
+    const Json::Value& value = json["value"];
 
     switch (type)
     {
         case VAR_INT:
-            i32 = var->IntAttribute("value");
+            i32 = value.isInt() ? value.asInt() : 0;
             break;
         case VAR_BYTE:
-            byte = (char)var->IntAttribute("value");
+            byte = value.isInt() ? static_cast<char>(value.asInt()) : 0;
             break;
         case VAR_STR:
-            str = var->Attribute("value");
+            str = value.isString() ? value.asString() : "";
             break;
         case VAR_DOUBLE:
-            d = var->DoubleAttribute("value");
+            d = value.isDouble() ? value.asDouble() : 0.0;
             break;
         case VAR_EMPTY:
-            break;
         default:
-            // should we error again?
             break;
     }
 }

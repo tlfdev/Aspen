@@ -1,11 +1,14 @@
+#include "uuid.h"
+
+#include "serializationHelpers.h"
+
 #include <tinyxml2.h>
-#include <string>
-#include <sstream>
+
+#include <chrono>
 #include <iomanip>
 #include <random>
-#include <chrono>
-#include "uuid.h"
-#include "serializationHelpers.h"
+#include <sstream>
+#include <string>
 
 Uuid::Uuid()
 {
@@ -15,16 +18,14 @@ Uuid::Uuid(const Uuid& u)
 {
     _id = u._id;
 }
-Uuid::~Uuid()
-{
-}
+Uuid::~Uuid() {}
 void Uuid::Initialize()
 {
     unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 generator(seed);
     _id = generator();
     _id <<= 32;
-    _id |= (0xFFFF&time(nullptr));
+    _id |= (0xFFFF & time(nullptr));
 }
 std::string Uuid::ToString() const
 {
@@ -38,30 +39,30 @@ unsigned long long int Uuid::GetValue() const
     return _id;
 }
 
-void Uuid::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void Uuid::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* node = doc->NewElement("uuid");
-    SerializeLong(node, _id);
-    root->InsertEndChild(node);
-}
-void Uuid::Deserialize(tinyxml2::XMLElement* root)
-{
-    tinyxml2::XMLElement* element = nullptr;
-
-    element = root->FirstChildElement("uuid");
-    if (element)
-        {
-            _id = DeserializeLong(root);
-        }
+    json["id"] = (Json::Value::UInt64)_id;
 }
 
-Uuid& Uuid::operator =(Uuid& u)
+void Uuid::FromJson(const Json::Value& json, int version)
+{
+    if (json.isMember("id") && json["id"].isUInt64())
+    {
+        _id = json["id"].asUInt64();
+    }
+    else
+    {
+        _id = 0;
+    }
+}
+
+Uuid& Uuid::operator=(Uuid& u)
 {
     _id = u._id;
     return *this;
 }
-bool Uuid::operator ==(Uuid& u)
+bool Uuid::operator==(Uuid& u)
 {
     return (u._id == _id);
 }

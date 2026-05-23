@@ -1,19 +1,22 @@
-#include <tinyxml2.h>
-#include <sstream>
-#include <string>
-#include <list>
-#include <functional>
 #include "room.h"
-#include "living.h"
-#include "exit.h"
-#include "player.h"
+
 #include "event.h"
 #include "eventargs.h"
-#include "zone.h"
+#include "exit.h"
+#include "living.h"
 #include "olc.h"
-#include "olcManager.h"
 #include "olcGroup.h"
+#include "olcManager.h"
+#include "player.h"
 #include "world.h"
+#include "zone.h"
+
+#include <tinyxml2.h>
+
+#include <functional>
+#include <list>
+#include <sstream>
+#include <string>
 
 Room::Room()
 {
@@ -23,34 +26,34 @@ Room::Room()
 }
 Room::~Room()
 {
-    for (auto it: _exits)
-        {
-            delete it;
-        }
+    for (auto it : _exits)
+    {
+        delete it;
+    }
 }
 
 bool Room::AddExit(Exit* exit)
 {
-    if (exit==nullptr)
-        {
-            return false;
-        }
+    if (exit == nullptr)
+    {
+        return false;
+    }
 
     if (_exits.size())
+    {
+        for (auto it : _exits)
         {
-            for (auto it: _exits)
-                {
-                    if (exit == it)
-                        {
-                            return false;
-                        }
-                }
+            if (exit == it)
+            {
+                return false;
+            }
         }
+    }
 
     if (ExitExists(exit->GetDirection()))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
     _exits.push_back(exit);
     return true;
@@ -59,15 +62,15 @@ bool Room::AddExit(Exit* exit)
 bool Room::ExitExists(ExitDirection dir)
 {
     if (_exits.size())
+    {
+        for (auto it : _exits)
         {
-            for (auto it: _exits)
-                {
-                    if (it->GetDirection() == dir)
-                        {
-                            return true;
-                        }
-                }
+            if (it->GetDirection() == dir)
+            {
+                return true;
+            }
         }
+    }
 
     return false;
 }
@@ -75,15 +78,15 @@ bool Room::ExitExists(ExitDirection dir)
 Exit* Room::GetExit(ExitDirection dir)
 {
     if (_exits.size())
+    {
+        for (auto it : _exits)
         {
-            for (auto it: _exits)
-                {
-                    if (it->GetDirection() == dir)
-                        {
-                            return it;
-                        }
-                }
+            if (it->GetDirection() == dir)
+            {
+                return it;
+            }
         }
+    }
 
     return nullptr;
 }
@@ -102,24 +105,24 @@ FLAG Room::GetRoomFlag()
     return _rflag;
 }
 
-void Room::TellAll(const std::string &message)
+void Room::TellAll(const std::string& message)
 {
     std::list<Living*>::iterator it, itEnd;
 
     itEnd = _mobiles.end();
     for (it = _mobiles.begin(); it != itEnd; ++it)
+    {
+        if ((*it)->IsPlayer())
         {
-            if ((*it)->IsPlayer())
-                {
-                    ((Player*)(*it))->Message(MSG_INFO,message);
-                }
+            ((Player*)(*it))->Message(MSG_INFO, message);
         }
+    }
 }
-void Room::TellAllBut(const std::string &message, std::list <Player*>* players)
+void Room::TellAllBut(const std::string& message, std::list<Player*>* players)
 {
     std::list<Player*> left;
     std::list<Player*>::iterator pit, pitEnd;
-    std::list <Living*>::iterator lit, litEnd;
+    std::list<Living*>::iterator lit, litEnd;
 
     bool found = false;
 
@@ -127,40 +130,40 @@ void Room::TellAllBut(const std::string &message, std::list <Player*>* players)
     litEnd = _mobiles.end();
 
     for (lit = _mobiles.begin(); lit != litEnd; ++lit)
+    {
+        for (pit = players->begin(); pit != pitEnd; ++pit)
         {
-            for (pit = players->begin(); pit != pitEnd; ++pit)
-                {
-                    if ((*lit) == (*pit))
-                        {
-                            found = true;
-                            break;
-                        }
-                }
-            if (!found)
-                {
-                    left.push_back((Player*)(*lit));
-                }
-            found = false;
+            if ((*lit) == (*pit))
+            {
+                found = true;
+                break;
+            }
         }
+        if (!found)
+        {
+            left.push_back((Player*)(*lit));
+        }
+        found = false;
+    }
 
     pitEnd = left.end();
     for (pit = left.begin(); pit != pitEnd; ++pit)
-        {
-            (*pit)->Message(MSG_INFO, message);
-        }
+    {
+        (*pit)->Message(MSG_INFO, message);
+    }
 }
-void Room::TellAllBut(const std::string &message, Player* exclude)
+void Room::TellAllBut(const std::string& message, Player* exclude)
 {
     std::list<Living*>::iterator it, itEnd;
 
     itEnd = _mobiles.end();
     for (it = _mobiles.begin(); it != itEnd; ++it)
+    {
+        if ((*it)->IsPlayer() && (*it) != exclude)
         {
-            if ((*it)->IsPlayer() &&(*it) != exclude)
-                {
-                    ((Player*)(*it))->Message(MSG_INFO,message);
-                }
+            ((Player*)(*it))->Message(MSG_INFO, message);
         }
+    }
 }
 
 bool Room::IsRoom() const
@@ -168,116 +171,128 @@ bool Room::IsRoom() const
     return true;
 }
 
-void Room::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void Room::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* room = doc->NewElement("room");
+    using namespace JsonSerializerHelpers;
 
-    room->SetAttribute("rflag", _rflag);
-    SerializeList<Exit*, std::vector<Exit*>>("exits", room, _exits);
+    // Serialize base ObjectContainer
+    ObjectContainer::ToJson(json);
 
-    ObjectContainer::Serialize(room);
-    root->InsertEndChild(room);
+    // Serialize Room-specific fields
+    json["rflag"] = _rflag;
+
+    // Serialize exits (Exit class would need JSON support)
+    // For now, leaving this as a TODO since Exit class needs conversion
+    Json::Value exitsArray(Json::arrayValue);
+    // TODO: Add exit serialization once Exit class has ToJson
+    json["exits"] = exitsArray;
 }
-void Room::Deserialize(tinyxml2::XMLElement* room)
-{
-    _rflag = room->IntAttribute("rflag");
 
-    DeserializeList<Exit, std::vector<Exit*>>(room, "exits", _exits);
-    ObjectContainer::Deserialize(room->FirstChildElement("objc"));
+void Room::FromJson(const Json::Value& json, int version)
+{
+    using namespace JsonSerializerHelpers;
+
+    // Deserialize base ObjectContainer
+    ObjectContainer::FromJson(json, version);
+
+    // Deserialize Room-specific fields
+    _rflag = GetUInt(json, "rflag", 0);
+
+    // Deserialize exits (Exit class would need JSON support)
+    // TODO: Add exit deserialization once Exit class has FromJson
 }
 
 void Room::ObjectEnter(Entity* obj)
 {
     if (obj->IsLiving())
-        {
-            _mobiles.push_back((Living*)obj);
-        }
+    {
+        _mobiles.push_back((Living*)obj);
+    }
     else
-        {
-            ObjectContainer::ObjectEnter(obj);
-        }
+    {
+        ObjectContainer::ObjectEnter(obj);
+    }
 }
 void Room::ObjectLeave(Entity* obj)
 {
     if (obj->IsLiving())
+    {
+        std::list<Living*>::iterator it, itEnd;
+        itEnd = _mobiles.end();
+        for (it = _mobiles.begin(); it != itEnd; ++it)
         {
-            std::list<Living*>::iterator it, itEnd;
-            itEnd = _mobiles.end();
-            for (it = _mobiles.begin(); it != itEnd; ++it)
-                {
-                    if ((*it) == obj)
-                        {
-                            _mobiles.erase(it);
-                            break;
-                        }
-                }
+            if ((*it) == obj)
+            {
+                _mobiles.erase(it);
+                break;
+            }
         }
+    }
     else
-        {
-            ObjectContainer::ObjectLeave(obj);
-        }
+    {
+        ObjectContainer::ObjectLeave(obj);
+    }
 }
 
-//events
+// events
 CEVENT(Room, PostLook)
 {
     std::stringstream st;
-    LookArgs* largs=(LookArgs*)args;
+    LookArgs* largs = (LookArgs*)args;
 
-//we need to show everything in the room first:
+    // we need to show everything in the room first:
     if (_mobiles.size() != 1)
-        {
-            std::list<Living*>::iterator it, itEnd;
-            itEnd = _mobiles.end();
+    {
+        std::list<Living*>::iterator it, itEnd;
+        itEnd = _mobiles.end();
 
-            for (it = _mobiles.begin(); it != itEnd; ++it)
-                {
-                    if ((*it) == largs->_caller)
-                        {
-                            continue;
-                        }
-                    largs->_desc += (*it)->GetShort()+"\r\n";
-                }
+        for (it = _mobiles.begin(); it != itEnd; ++it)
+        {
+            if ((*it) == largs->_caller)
+            {
+                continue;
+            }
+            largs->_desc += (*it)->GetShort() + "\r\n";
         }
+    }
     if (_contents.size())
+    {
+        std::list<Entity*>::iterator it, itEnd;
+        std::map<std::string, int> counts;
+        std::map<std::string, int>::iterator mit, mitEnd;
+
+        // we need to try to combine the objects. First, we go through the list of everything and see how many of x
+        // there are. after that, we can add (x) foobars to the string. this is a slightly slow process...
+        std::list<Entity*>::iterator cit, citEnd;
+        citEnd = _contents.end();
+        for (cit = _contents.begin(); cit != itEnd; ++cit)
         {
-            std::list<Entity*>::iterator it, itEnd;
-            std::map<std::string, int> counts;
-            std::map<std::string, int>::iterator mit, mitEnd;
-
-//we need to try to combine the objects. First, we go through the list of everything and see how many of x there are.
-//after that, we can add (x) foobars to the string.
-//this is a slightly slow process...
-            std::list<Entity*>::iterator cit, citEnd;
-            citEnd = _contents.end();
-            for (cit = _contents.begin(); cit != itEnd; ++cit)
-                {
-                    if (counts.count((*cit)->GetShort()))
-                        {
-                            counts[(*cit)->GetShort()]++;
-                        }
-                    else
-                        {
-                            counts[(*cit)->GetShort()] = 1;
-                        }
-                }
-
-//now we iterate:
-            mitEnd = counts.end();
-            for (mit = counts.begin(); mit != mitEnd; ++mit)
-                {
-                    if ((*mit).second > 1)
-                        {
-                            st << "(" << (*mit).second << ") " << (*mit).first << "\r\n";
-                        }
-                    else
-                        {
-                            st << (*mit).first << "\r\n";
-                        }
-                }
-            largs->_desc = st.str();
+            if (counts.count((*cit)->GetShort()))
+            {
+                counts[(*cit)->GetShort()]++;
+            }
+            else
+            {
+                counts[(*cit)->GetShort()] = 1;
+            }
         }
+
+        // now we iterate:
+        mitEnd = counts.end();
+        for (mit = counts.begin(); mit != mitEnd; ++mit)
+        {
+            if ((*mit).second > 1)
+            {
+                st << "(" << (*mit).second << ") " << (*mit).first << "\r\n";
+            }
+            else
+            {
+                st << (*mit).first << "\r\n";
+            }
+        }
+        largs->_desc = st.str();
+    }
 
     largs->_desc += TellObviousExits();
 }
@@ -286,23 +301,23 @@ std::string Room::TellObviousExits()
     std::stringstream st;
     size_t count = 0;
     size_t i = 0;
-    std::vector<Exit*> *exits = GetExits();
+    std::vector<Exit*>* exits = GetExits();
 
     if (!exits->size())
-        {
-            return "You see no obvious exits.";
-        }
+    {
+        return "You see no obvious exits.";
+    }
     else
+    {
+        st << "Obvious exits: [";
+        count = exits->size();
+        for (i = 0; i < count - 1; i++)
         {
-            st << "Obvious exits: [";
-            count = exits->size();
-            for (i = 0; i < count-1; i++)
-                {
-                    st << exits->at(i)->GetName() << ", ";
-                }
-            st << exits->at(exits->size()-1)->GetName();
-            st << "].";
+            st << exits->at(i)->GetName() << ", ";
         }
+        st << exits->at(exits->size() - 1)->GetName();
+        st << "].";
+    }
 
     return st.str();
 }

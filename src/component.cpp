@@ -1,9 +1,12 @@
-#include <tinyxml2.h>
-#include <vector>
 #include "component.h"
-#include "exception.h"
+
 #include "eventargs.h"
+#include "exception.h"
 #include "world.h"
+
+#include <tinyxml2.h>
+
+#include <vector>
 
 void Component::Initialize()
 {
@@ -16,9 +19,7 @@ void Component::Initialize()
     events.CallEvent("OnCreate", nullptr, (void*)this);
 }
 
-Component::Component(IComponentMeta* parent):_parent(parent)
-{
-}
+Component::Component(IComponentMeta* parent) : _parent(parent) {}
 Component::Component()
 {
     _parent = nullptr;
@@ -28,27 +29,35 @@ Component::~Component()
     events.CallEvent("OnDestroy", nullptr, (void*)this);
 }
 
-void Component::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void Component::ToJson(Json::Value& json) const
 {
-    root->SetAttribute("name", _parent->GetName().c_str());
-    variables.Serialize(root);
+    if (_parent)
+    {
+        json["type"] = _parent->GetName();
+    }
+    // Serialize component variables/properties
+    // Note: Property class would need JSON serialization support
+    // For now, we'll leave this minimal
 }
-void Component::Deserialize(tinyxml2::XMLElement* root)
+
+void Component::FromJson(const Json::Value& json, int version)
 {
-//we need to pull the name in entity when we deserialize, so we don't need that here.
-    variables.Deserialize(root);
+    // Deserialize component variables/properties
+    // Note: Property class would need JSON serialization support
+    // The component type is already handled by BaseObject
 }
 
 void Component::SetObject(BaseObject* obj)
 {
-    _object=obj;
+    _object = obj;
 }
 BaseObject* Component::GetObject() const
 {
     return _object;
 }
 
-IComponentMeta* Component::GetMeta()
+IComponentMeta* Component::GetMeta() const
 {
     return _parent;
 }
@@ -59,15 +68,15 @@ void Component::Attach(BaseObject* obj)
     std::vector<std::string> dependencies;
 
     if (_attached)
-        {
-            return;
-        }
+    {
+        return;
+    }
 
     _parent->GetDependencies(&dependencies);
-    for (auto it: dependencies)
-        {
-            obj->AddComponent(world->CreateComponent(it));
-        }
+    for (auto it : dependencies)
+    {
+        obj->AddComponent(world->CreateComponent(it));
+    }
 
     ComponentAttachedArgs arg(obj);
     events.CallEvent("OnAttach", &arg, (void*)this);
@@ -77,11 +86,11 @@ void Component::Attach(BaseObject* obj)
 void Component::Detach()
 {
     if (!_attached)
-        {
-            return;
-        }
+    {
+        return;
+    }
 
     SetObject(nullptr);
     _attached = false;
-    events.CallEvent("OnDetach", nullptr, (void*) this);
+    events.CallEvent("OnDetach", nullptr, (void*)this);
 }
