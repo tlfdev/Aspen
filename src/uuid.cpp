@@ -2,8 +2,6 @@
 
 #include "serializationHelpers.h"
 
-#include <tinyxml2.h>
-
 #include <chrono>
 #include <iomanip>
 #include <random>

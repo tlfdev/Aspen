@@ -5,7 +5,6 @@
 #include "mud.h"
 #include "world.h"
 
-#include <tinyxml2.h>
 
 Living::Living()
 {

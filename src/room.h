@@ -14,8 +14,6 @@
 #include "utils.h"
 #include "zone.h"
 
-#include <tinyxml2.h>
-
 #include <list>
 #include <string>
 

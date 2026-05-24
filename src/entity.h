@@ -17,8 +17,6 @@
     #include "uuid.h"
     #include "variant.h"
 
-    #include <tinyxml2.h>
-
     #include <list>
     #include <map>
     #include <string>

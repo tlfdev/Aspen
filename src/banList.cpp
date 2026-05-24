@@ -1,74 +1,77 @@
-#include <tinyxml2.h>
-#include <string>
-#include <arpa/inet.h>
-#include "mud.h"
-#include "conf.h"
 #include "banList.h"
 
-bool BanList::AddAddress(const std::string &address)
+#include "conf.h"
+#include "jsonSerializer.h"
+#include "mud.h"
+
+#include <string>
+
+#include <arpa/inet.h>
+
+bool BanList::AddAddress(const std::string& address)
 {
     in_addr addr;
 
     if (!inet_aton(address.c_str(), &addr))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
     if (AddressExists(addr.s_addr))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
     _addresses.push_back(addr.s_addr);
     return true;
 }
-bool BanList::RemoveAddress(const std::string &address)
+bool BanList::RemoveAddress(const std::string& address)
 {
     in_addr addr;
 
     if (inet_aton(address.c_str(), &addr))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
     auto end = _addresses.end();
-    for (auto it=_addresses.begin(); it != end; ++it)
+    for (auto it = _addresses.begin(); it != end; ++it)
+    {
+        if ((*it) == addr.s_addr)
         {
-            if ((*it) == addr.s_addr)
-                {
-                    _addresses.erase(it);
-                    return true;
-                }
+            _addresses.erase(it);
+            return true;
         }
+    }
 
     return false;
 }
-bool BanList::AddressExists(const std::string &address) const
+bool BanList::AddressExists(const std::string& address) const
 {
     in_addr addr;
 
     if (inet_aton(address.c_str(), &addr))
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
-    for (auto it: _addresses)
+    for (auto it : _addresses)
+    {
+        if (it == addr.s_addr)
         {
-            if (it == addr.s_addr)
-                {
-                    return true;
-                }
+            return true;
         }
+    }
 
     return false;
 }
 bool BanList::AddressExists(unsigned long address) const
 {
-    for (auto it: _addresses)
+    for (auto it : _addresses)
+    {
+        if (it == address)
         {
-            if (it == address)
-                {
-                    return true;
-                }
+            return true;
         }
+    }
 
     return false;
 }
@@ -77,45 +80,42 @@ void BanList::ListAddresses(std::vector<std::string>& addresses)
     in_addr addr;
     std::string val;
 
-    for (auto it: _addresses)
-        {
-            addr.s_addr = it;
-            val = inet_ntoa(addr);
-            addresses.push_back(val);
-        }
+    for (auto it : _addresses)
+    {
+        addr.s_addr = it;
+        val = inet_ntoa(addr);
+        addresses.push_back(val);
+    }
 }
 
-void BanList::Serialize(tinyxml2::XMLElement* root)
+void BanList::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* entries = doc->NewElement("entries");
+    Json::Value addressesArray(Json::arrayValue);
     in_addr addr;
-    std::string printable;
 
-    for (auto it: _addresses)
-        {
-            tinyxml2::XMLElement* entry = doc->NewElement("entry");
-            addr.s_addr = it;
-            printable = inet_ntoa(addr);
-            entry->SetAttribute("address", printable.c_str());
-            entries->InsertEndChild(entry);
-        }
+    for (auto it : _addresses)
+    {
+        addr.s_addr = it;
+        std::string printable = inet_ntoa(addr);
+        addressesArray.append(printable);
+    }
 
-    root->InsertEndChild(entries);
+    json["addresses"] = addressesArray;
 }
-void BanList::Deserialize(tinyxml2::XMLElement* root)
+
+void BanList::FromJson(const Json::Value& json, int version)
 {
-    tinyxml2::XMLElement* entries = nullptr;
-    tinyxml2::XMLElement* entry = nullptr;
+    _addresses.clear();
 
-    entries = root->FirstChildElement("entries");
-    if (!entries)
+    if (json.isMember("addresses") && json["addresses"].isArray())
+    {
+        const Json::Value& addressesArray = json["addresses"];
+        for (const auto& addrJson : addressesArray)
         {
-            return;
+            if (addrJson.isString())
+            {
+                AddAddress(addrJson.asString());
+            }
         }
-
-    for (entry = entries->FirstChildElement(); entry; entry = entries->NextSiblingElement())
-        {
-            AddAddress(entry->Attribute("address"));
-        }
+    }
 }

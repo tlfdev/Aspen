@@ -7,8 +7,6 @@
     #include "npc.h"
     #include "room.h"
 
-    #include <tinyxml2.h>
-
     #include <unordered_map>
 
 /*

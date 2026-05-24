@@ -20,8 +20,6 @@
 #include "mud.h"
 #include "property.h"
 
-#include <tinyxml2.h>
-
 #include <functional>
 #include <string>
 #include <vector>

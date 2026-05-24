@@ -3,8 +3,6 @@
 #include "conf.h"
 #include "mud.h"
 
-#include <tinyxml2.h>
-
 #include <list>
 
 /**

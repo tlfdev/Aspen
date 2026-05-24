@@ -1,17 +1,15 @@
-#include <tinyxml2.h>
-#include <string>
 #include "exit.h"
+
+#include "jsonSerializer.h"
 #include "living.h"
 
-Exit::Exit(VNUM to):
-    _to(to)
+#include <string>
+
+Exit::Exit(VNUM to) : _to(to)
 {
     _direction = nowhere;
 }
-Exit::Exit():
-    _to(EXIT_NOWHERE)
-{
-}
+Exit::Exit() : _to(EXIT_NOWHERE) {}
 
 VNUM Exit::GetTo() const
 {
@@ -19,7 +17,7 @@ VNUM Exit::GetTo() const
 }
 void Exit::SetTo(VNUM to)
 {
-    _to=to;
+    _to = to;
 }
 
 ExitDirection Exit::GetDirection() const
@@ -33,8 +31,8 @@ void Exit::SetDirection(ExitDirection dir)
 
 std::string Exit::GetName() const
 {
-    switch(_direction)
-        {
+    switch (_direction)
+    {
         case north:
             return "north";
         case south:
@@ -53,7 +51,7 @@ std::string Exit::GetName() const
             return "southeast";
         default:
             return "unknown";
-        }
+    }
 }
 
 bool Exit::CanEnter(Living* mobile)
@@ -61,17 +59,15 @@ bool Exit::CanEnter(Living* mobile)
     return true;
 }
 
-void Exit::Serialize(tinyxml2::XMLElement* root)
+void Exit::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* node = doc->NewElement("exit");
-
-    node->SetAttribute("direction", _direction);
-    node->SetAttribute("to", _to);
-    root->InsertEndChild(node);
+    json["direction"] = static_cast<int>(_direction);
+    json["to"] = _to;
 }
-void Exit::Deserialize(tinyxml2::XMLElement* node)
+
+void Exit::FromJson(const Json::Value& json, int version)
 {
-    _to = node->IntAttribute("to");
-    _direction = (ExitDirection)node->IntAttribute("direction");
+    _direction =
+        static_cast<ExitDirection>(JsonSerializerHelpers::GetInt(json, "direction", static_cast<int>(nowhere)));
+    _to = JsonSerializerHelpers::GetUInt(json, "to", EXIT_NOWHERE);
 }

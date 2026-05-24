@@ -1,28 +1,28 @@
-#include <tinyxml2.h>
+#include "board.h"
+
+#include "boardPost.h"
+
 #include <string>
 #include <vector>
-#include "board.h"
-#include "boardPost.h"
-#include "../../mud.h"
+
 #include "../../conf.h"
+#include "../../mud.h"
 #include "../../serializationHelpers.hpp"
 
 #ifdef MODULE_BOARD
-Board::Board()
-{
-}
+Board::Board() {}
 Board::~Board()
 {
     std::vector<BoardPost*>::iterator it, itEnd;
 
     itEnd = _posts.end();
     for (it = _posts.begin(); it != itEnd; ++it)
-        {
-            delete (*it);
-        }
+    {
+        delete (*it);
+    }
 }
 
-void Board::SetName(const std::string &name)
+void Board::SetName(const std::string& name)
 {
     _name = name;
 }
@@ -51,26 +51,49 @@ std::vector<BoardPost*>* Board::GetPosts()
 BoardPost* Board::GetPostByIndex(int index)
 {
     if ((index < 1) || (index > (int)_posts.size()))
-        {
-            return NULL;
-        }
+    {
+        return NULL;
+    }
 
-    return _posts[index-1];
+    return _posts[index - 1];
 }
-void Board::Serialize(TiXmlElement* root)
+// JSON serialization
+void Board::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* board = doc->NewElement("board");
-    board->SetAttribute("name", _name.c_str());
-    board->SetAttribute("access", _access);
-    SerializeList<BoardPost, std::vector<BoardPost*>>("posts", "post", board, _posts);
-    root->InsertEndChild(board);
+    json["name"] = _name;
+    json["access"] = _access;
+
+    // Serialize posts
+    Json::Value postsArray(Json::arrayValue);
+    for (const auto* post : _posts)
+    {
+        if (post)
+        {
+            Json::Value postJson;
+            post->ToJson(postJson);
+            postsArray.append(postJson);
+        }
+    }
+    json["posts"] = postsArray;
 }
-void Board::Deserialize(TiXmlElement* board)
+
+void Board::FromJson(const Json::Value& json, int version)
 {
-    unsigned int flag = 0;
-    _name = board->Attribute("name");
-    _access = board->IntAttribute("access");
-    DeserializeList<BoardPost, std::vector<BoardPost*> >(board, "posts", _posts);
+    using namespace JsonSerializerHelpers;
+
+    _name = GetString(json, "name", "");
+    _access = GetUInt(json, "access", 0);
+
+    // Deserialize posts
+    if (json.isMember("posts") && json["posts"].isArray())
+    {
+        const Json::Value& postsArray = json["posts"];
+        for (const auto& postJson : postsArray)
+        {
+            BoardPost* post = new BoardPost();
+            post->FromJson(postJson, version);
+            _posts.push_back(post);
+        }
+    }
 }
 #endif

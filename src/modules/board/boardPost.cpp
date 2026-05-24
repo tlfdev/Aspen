@@ -1,31 +1,28 @@
-#include <tinyxml2.h>
-#include <string>
-#include "../modules.h"
-#include "../../mud.h"
-#include "../../conf.h"
-#include "../../uuid.h"
-#include "../../player.h"
 #include "boardPost.h"
+
+#include <string>
+
+#include "../../conf.h"
+#include "../../mud.h"
+#include "../../player.h"
+#include "../../uuid.h"
+#include "../modules.h"
 
 #ifdef MODULE_BOARD
 
-BoardPost::BoardPost()
-{
-}
-BoardPost::BoardPost(const std::string &s, const std::string &m)
+BoardPost::BoardPost() {}
+BoardPost::BoardPost(const std::string& s, const std::string& m)
 {
     _message = m;
     _subject = s;
 }
-BoardPost::~BoardPost()
-{
-}
+BoardPost::~BoardPost() {}
 
 std::string BoardPost::GetSubject() const
 {
     return _subject;
 }
-void BoardPost::SetSubject(const std::string &s)
+void BoardPost::SetSubject(const std::string& s)
 {
     _subject = s;
 }
@@ -33,7 +30,7 @@ std::string BoardPost::GetMessage() const
 {
     return _message;
 }
-void BoardPost::SetMessage(const std::string &m)
+void BoardPost::SetMessage(const std::string& m)
 {
     _message = m;
 }
@@ -52,21 +49,31 @@ void BoardPost::SetPoster(Player* mobile)
     _pid = mobile->GetUuid();
 }
 
-void BoardPost::Serialize(tinyxml2::XMLElement* root)
+// JSON serialization
+void BoardPost::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* post = doc->NewElement("post");
-    post->SetAttribute("subject", _subject.c_str());
-    post->SetAttribute("message", _message.c_str());
-    post->SetAttribute("poster", _poster.c_str());
-    _pid.Serialize(post);
-    root->InsertEndChild(post);
+    json["subject"] = _subject;
+    json["message"] = _message;
+    json["poster"] = _poster;
+
+    // Serialize UUID
+    Json::Value uuidJson;
+    _pid.ToJson(uuidJson);
+    json["pid"] = uuidJson;
 }
-void BoardPost::Deserialize(tinyxml2::XMLElement* root)
+
+void BoardPost::FromJson(const Json::Value& json, int version)
 {
-    _pid.Deserialize(root);
-    _subject = root->Attribute("subject");
-    _message = root->Attribute("message");
-    _poster = root->Attribute("poster");
+    using namespace JsonSerializerHelpers;
+
+    _subject = GetString(json, "subject", "");
+    _message = GetString(json, "message", "");
+    _poster = GetString(json, "poster", "");
+
+    // Deserialize UUID
+    if (json.isMember("pid"))
+    {
+        _pid.FromJson(json["pid"], version);
+    }
 }
 #endif

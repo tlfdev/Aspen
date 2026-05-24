@@ -7,7 +7,6 @@
     #include "mud.h"
     #include "olc.h"
 
-    #include <tinyxml2.h>
 
 class Npc;
 class StaticObject : public BaseObject

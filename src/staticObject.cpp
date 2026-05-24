@@ -6,8 +6,6 @@
 #include "objectManager.h"
 #include "world.h"
 
-#include <tinyxml2.h>
-
 #include <algorithm>
 #include <functional>
 #ifdef OLC

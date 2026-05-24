@@ -11,8 +11,6 @@
 #include "utils.h"
 #include "world.h"
 
-#include <tinyxml2.h>
-
 #include <list>
 #include <map>
 #include <sstream>

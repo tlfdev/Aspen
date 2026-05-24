@@ -10,8 +10,6 @@
     #include "event.h"
     #include "mud.h"
 
-    #include <tinyxml2.h>
-
     #include <queue>
     #include <vector>
 

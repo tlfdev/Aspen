@@ -1,17 +1,15 @@
-#include <tinyxml2.h>
-#include <vector>
-#include <string>
-#include "mud.h"
-#include "conf.h"
 #include "alias.h"
+
+#include "conf.h"
+#include "jsonSerializer.h"
+#include "mud.h"
 #include "player.h"
 #include "world.h"
-#include "serializationHelpers.h"
 
-Alias::Alias(const std::string& name):
-    _name(name)
-{
-}
+#include <string>
+#include <vector>
+
+Alias::Alias(const std::string& name) : _name(name) {}
 
 std::string Alias::GetName() const
 {
@@ -26,18 +24,18 @@ void Alias::ProcessCommands(Player* mobile)
 {
     World* world = World::GetPtr();
 
-    for (auto it: _aliases)
-        {
-            world->DoCommand(mobile, it);
-        }
+    for (auto it : _aliases)
+    {
+        world->DoCommand(mobile, it);
+    }
 }
 
 void Alias::AddCommand(const std::string& command)
 {
     if (!command.empty())
-        {
-            _aliases.push_back(command);
-        }
+    {
+        _aliases.push_back(command);
+    }
 }
 void Alias::ClearCommands()
 {
@@ -45,31 +43,21 @@ void Alias::ClearCommands()
 }
 void Alias::ListCommands(std::vector<std::string>& commands)
 {
-    for (auto it: _aliases)
-        {
-            commands.push_back(it);
-        }
+    for (auto it : _aliases)
+    {
+        commands.push_back(it);
+    }
 }
 
-void Alias::Serialize(tinyxml2::XMLElement* root)
+void Alias::ToJson(Json::Value& json) const
 {
-    tinyxml2::XMLDocument* doc = root->GetDocument();
-    tinyxml2::XMLElement* alias = doc->NewElement("alias");
-
-    alias->SetAttribute("name", _name.c_str());
-
-    SerializeCollection<std::vector<std::string>, std::string>("commands", "command", root, _aliases, [](tinyxml2::XMLElement* visitor, std::string command)
-    {
-        visitor->SetAttribute("value", command.c_str());
-    });
-    root->LinkEndChild(alias);
+    json["name"] = _name;
+    JsonSerializerHelpers::SerializeStringVector(json, "aliases", _aliases);
 }
-void Alias::Deserialize(tinyxml2::XMLElement* root)
-{
-    _name = root->Attribute("name");
 
-    DeserializeCollection(root, "commands", [this](tinyxml2::XMLElement* visitor)
-    {
-        _aliases.push_back(visitor->Attribute("value"));
-    });
+void Alias::FromJson(const Json::Value& json, int version)
+{
+    _name = JsonSerializerHelpers::GetString(json, "name");
+    _aliases.clear();
+    JsonSerializerHelpers::DeserializeStringVector(json, "aliases", _aliases);
 }

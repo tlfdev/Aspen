@@ -1,25 +1,34 @@
 #pragma once
-#include <tinyxml2.h>
-#include <vector>
 #include "board.h"
-#include "../modules.h"
-#include "../../mud.h"
+
+#include <vector>
+
 #include "../../conf.h"
+#include "../../mud.h"
 #include "../../serializer.h"
+#include "../modules.h"
+#include <json/json.h>
 
 #ifdef MODULE_BOARD
 
-class BoardManager:public ISerializable
+class BoardManager : public ISerializable
 {
     std::vector<Board*> _boards;
-public:
+
+  public:
     BoardManager();
     ~BoardManager();
     void AddBoard(Board* board);
     void GetBoards(std::vector<Board*>* boards);
     Board* GetBoardByIndex(int index);
-    void Serialize(tinyxml2::XMLElement* root);
-    void Deserialize(tinyxml2::XMLElement* root);
+
+    // JSON serialization
+    void ToJson(Json::Value& json) const;
+    void FromJson(const Json::Value& json, int version);
+    int GetSerializationVersion() const
+    {
+        return 1;
+    }
 };
 
 #endif

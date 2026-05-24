@@ -10,8 +10,6 @@
 #include "utils.h"
 #include "world.h"
 
-#include <tinyxml2.h>
-
 #include <list>
 #include <sstream>
 #include <string>

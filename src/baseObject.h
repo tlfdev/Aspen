@@ -17,8 +17,6 @@
     #include "serializer.h"
     #include "variant.h"
 
-    #include <tinyxml2.h>
-
     #include <list>
     #include <string>
 

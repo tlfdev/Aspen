@@ -9,8 +9,6 @@
 #include "exception.h"
 #include "mud.h"
 
-#include <tinyxml2.h>
-
 #include <json/json.h>
 
 // exceptions

@@ -1,11 +1,12 @@
 #pragma once
-#include <tinyxml2.h>
 #include <string>
-#include "../../mud.h"
+
 #include "../../conf.h"
-#include "../../uuid.h"
+#include "../../mud.h"
 #include "../../player.h"
+#include "../../uuid.h"
 #include "../modules.h"
+#include <json/json.h>
 
 #ifdef MODULE_BOARD
 
@@ -15,19 +16,26 @@ class BoardPost
     std::string _message;
     std::string _poster;
     Uuid _pid;
-public:
+
+  public:
     BoardPost();
-    BoardPost(const std::string &s, const std::string& m);
+    BoardPost(const std::string& s, const std::string& m);
     ~BoardPost();
     std::string GetSubject() const;
-    void SetSubject(const std::string &s);
+    void SetSubject(const std::string& s);
     std::string GetMessage() const;
-    void SetMessage(const std::string &m);
+    void SetMessage(const std::string& m);
     std::string GetPoster() const;
     bool IsPoster(Player* mobile);
     void SetPoster(Player* mobile);
-    void Serialize(tinyxml2::XMLElement* root);
-    void Deserialize(tinyxml2::XMLElement* root);
+
+    // JSON serialization
+    void ToJson(Json::Value& json) const;
+    void FromJson(const Json::Value& json, int version);
+    int GetSerializationVersion() const
+    {
+        return 1;
+    }
 };
 
 #endif

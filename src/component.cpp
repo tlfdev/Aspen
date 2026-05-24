@@ -4,8 +4,6 @@
 #include "exception.h"
 #include "world.h"
 
-#include <tinyxml2.h>
-
 #include <vector>
 
 void Component::Initialize()

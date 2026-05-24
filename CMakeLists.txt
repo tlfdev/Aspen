@@ -17,7 +17,6 @@ include_directories("${PROJECT_BINARY_DIR}"
 ${CMAKE_CURRENT_SOURCE_DIR}/include
 ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp
 )
-add_subdirectory(xml)
 add_subdirectory(angelscript)
 add_subdirectory(jsoncpp)
 add_subdirectory(src)

@@ -9,8 +9,6 @@
 #include "utils.h"
 #include "world.h"
 
-#include <tinyxml2.h>
-
 #include <algorithm>
 #include <functional>
 #include <list>

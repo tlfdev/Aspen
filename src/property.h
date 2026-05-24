@@ -8,8 +8,6 @@
     #include "mud.h"
     #include "variant.h"
 
-    #include <tinyxml2.h>
-
     #include <string>
     #include <vector>
 

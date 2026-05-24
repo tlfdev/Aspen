@@ -1,7 +1,10 @@
 #pragma once
-#include <tinyxml2.h>
+#include "conf.h"
+#include "jsonSerializer.h"
+#include "mud.h"
+
 #include <functional>
 #include <string>
-#include "mud.h"
-#include "conf.h"
-#include "serializationHelpers.hpp"
+
+// DEPRECATED: TinyXML2 serialization has been removed.
+// Use jsonSerializer.h and JsonSerializerHelpers namespace instead.

@@ -3,6 +3,7 @@ set (CMAKE_CXX_STANDARD 20)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem log system date_time)
+find_package(SQLite3 REQUIRED)
 
 SET(SOURCE
   ComponentFactory.cpp
@@ -197,7 +198,6 @@ link_directories(${Boost_LIBRARY_DIR})
 target_link_libraries (aspen LINK_PUBLIC
 angelscript
 jsoncpp
-tinyxml
 ${ZLIB_LIBRARIES}
 ${OPENSSL_SSL_LIBRARY}
 ${OPENSSL_CRYPTO_LIBRARY}

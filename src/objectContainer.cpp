@@ -6,8 +6,6 @@
 #include "mud.h"
 #include "serializationHelpers.h"
 
-#include <tinyxml2.h>
-
 #include <list>
 
 std::list<Entity*>* ObjectContainer::GetContents()

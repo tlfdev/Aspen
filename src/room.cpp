@@ -11,8 +11,6 @@
 #include "world.h"
 #include "zone.h"
 
-#include <tinyxml2.h>
-
 #include <functional>
 #include <list>
 #include <sstream>
@@ -182,10 +180,17 @@ void Room::ToJson(Json::Value& json) const
     // Serialize Room-specific fields
     json["rflag"] = _rflag;
 
-    // Serialize exits (Exit class would need JSON support)
-    // For now, leaving this as a TODO since Exit class needs conversion
+    // Serialize exits
     Json::Value exitsArray(Json::arrayValue);
-    // TODO: Add exit serialization once Exit class has ToJson
+    for (Exit* exit : _exits)
+    {
+        if (exit)
+        {
+            Json::Value exitJson;
+            exit->ToJson(exitJson);
+            exitsArray.append(exitJson);
+        }
+    }
     json["exits"] = exitsArray;
 }
 
@@ -199,8 +204,17 @@ void Room::FromJson(const Json::Value& json, int version)
     // Deserialize Room-specific fields
     _rflag = GetUInt(json, "rflag", 0);
 
-    // Deserialize exits (Exit class would need JSON support)
-    // TODO: Add exit deserialization once Exit class has FromJson
+    // Deserialize exits
+    if (json.isMember("exits") && json["exits"].isArray())
+    {
+        const Json::Value& exitsArray = json["exits"];
+        for (const auto& exitJson : exitsArray)
+        {
+            Exit* exit = new Exit();
+            exit->FromJson(exitJson, version);
+            _exits.push_back(exit);
+        }
+    }
 }
 
 void Room::ObjectEnter(Entity* obj)

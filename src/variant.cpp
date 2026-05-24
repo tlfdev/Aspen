@@ -3,7 +3,6 @@
 #include "exception.h"
 #include "world.h"
 
-#include <tinyxml2.h>
 
 Variant::Variant()
 {
