@@ -84,6 +84,7 @@ set(SCRIPT_SOURCE
   scripts/scr_Entity.cpp
   scripts/scr_Exit.cpp
   scripts/scr_ObjectContainer.cpp
+  scripts/scr_Living.cpp
   scripts/scr_Player.cpp
   scripts/scr_Room.cpp
   scripts/script.cpp

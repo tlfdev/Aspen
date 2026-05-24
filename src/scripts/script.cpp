@@ -1,27 +1,35 @@
+#include "script.h"
+
+#include "scr_BaseObject.h"
+#include "scr_Entity.h"
+#include "scr_Exit.h"
+#include "scr_Living.h"
+#include "scr_ObjectContainer.h"
+#include "scr_Player.h"
+#include "scr_Room.h"
+
 #include <angelscript.h>
-#include <scriptstdstring.h>
+
+#include <cassert>
+#include <sstream>
+
 #include <scriptarray.h>
 #include <scriptdictionary.h>
 #include <scriptmath.h>
-#include <sstream>
-#include <cassert>
-#include "../mud.h"
-#include "../world.h"
+#include <scriptstdstring.h>
+
 #include "../event.h"
 #include "../log.h"
-#include "script.h"
-#include "scr_BaseObject.h"
-#include "scr_Entity.h"
-#include "scr_ObjectContainer.h"
-#include "scr_Exit.h"
+#include "../mud.h"
+#include "../world.h"
 
-static void MessageCallback(const asSMessageInfo *msg, void *param)
+static void MessageCallback(const asSMessageInfo* msg, void* param)
 {
     std::stringstream st;
 
-//error type:
-    switch(msg->type)
-        {
+    // error type:
+    switch (msg->type)
+    {
         case asMSGTYPE_ERROR:
             st << "[ERROR]";
             break;
@@ -33,7 +41,7 @@ static void MessageCallback(const asSMessageInfo *msg, void *param)
             break;
         default:
             st << "[UNKNOWN]";
-        }
+    }
 
     st << " @" << msg->section << ":";
     st << "LN " << msg->row << ", COL " << msg->col << ":";
@@ -64,10 +72,10 @@ void ScriptEngine::Initialize()
 void ScriptEngine::Release()
 {
     if (_ptr)
-        {
-            delete _ptr;
-            _ptr = nullptr;
-        }
+    {
+        delete _ptr;
+        _ptr = nullptr;
+    }
 }
 ScriptEngine* ScriptEngine::GetPtr()
 {
@@ -82,20 +90,20 @@ bool ScriptEngine::RegisterMethod(const char* obj, const char* decl, asSFuncPtr 
 {
     int ret = 0;
     ret = _engine->RegisterObjectMethod(obj, decl, ptr, asCALL_THISCALL);
-    return (ret >= 0? true : false);
+    return (ret >= 0 ? true : false);
 }
 bool ScriptEngine::RegisterMethod(const char* obj, const char* decl, asSFuncPtr ptr, asDWORD callConv)
 {
     int ret = 0;
     ret = _engine->RegisterObjectMethod(obj, decl, ptr, callConv);
-    return (ret >= 0? true : false);
+    return (ret >= 0 ? true : false);
 }
 bool ScriptEngine::RegisterObject(const char* obj)
 {
     int r = 0;
 
-    r = _engine->RegisterObjectType(obj, 0, asOBJ_REF|asOBJ_NOCOUNT);
-    return (r >= 0? true : false);
+    r = _engine->RegisterObjectType(obj, 0, asOBJ_REF | asOBJ_NOCOUNT);
+    return (r >= 0 ? true : false);
 }
 
 CEVENT(ScriptEngine, Shutdown)
@@ -124,6 +132,12 @@ static void InitializeObjects()
     assert(ret);
     ret = engine->RegisterObject("Exit");
     assert(ret);
+    ret = engine->RegisterObject("Room");
+    assert(ret);
+    ret = engine->RegisterObject("Living");
+    assert(ret);
+    ret = engine->RegisterObject("Player");
+    assert(ret);
 }
 
 /**
@@ -135,6 +149,9 @@ static void InitializeObjectTraits()
     InitializeEntity();
     InitializeObjectContainer();
     InitializeExit();
+    InitializeRoom();
+    InitializeLiving();
+    InitializePlayerScript();
 }
 
 bool InitializeScript()
@@ -146,7 +163,8 @@ bool InitializeScript()
 
     ScriptEngine::Initialize();
     engine = ScriptEngine::GetPtr();
-    world->events.AddCallback("Shutdown", std::bind(&ScriptEngine::Shutdown, engine, std::placeholders::_1, std::placeholders::_2));
+    world->events.AddCallback("Shutdown",
+                              std::bind(&ScriptEngine::Shutdown, engine, std::placeholders::_1, std::placeholders::_2));
 
     InitializeObjects();
     InitializeObjectTraits();
