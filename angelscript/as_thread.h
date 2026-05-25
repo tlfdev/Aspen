@@ -1,6 +1,6 @@
 /*
    AngelCode Scripting Library
-   Copyright (c) 2003-2014 Andreas Jonsson
+   Copyright (c) 2003-2017 Andreas Jonsson
 
    This software is provided 'as-is', without any express or implied
    warranty. In no event will the authors be held liable for any
@@ -29,7 +29,6 @@
 */
 
 
-
 //
 // as_thread.h
 //
@@ -39,11 +38,11 @@
 #ifndef AS_THREAD_H
 #define AS_THREAD_H
 
-#include "as_config.h"
-#include "as_string.h"
 #include "as_array.h"
-#include "as_map.h"
+#include "as_config.h"
 #include "as_criticalsection.h"
+#include "as_map.h"
+#include "as_string.h"
 
 BEGIN_AS_NAMESPACE
 
@@ -51,38 +50,38 @@ class asCThreadLocalData;
 
 class asCThreadManager : public asIThreadManager
 {
-public:
-	static asCThreadLocalData *GetLocalData();
-	static int CleanupLocalData();
+  public:
+    static asCThreadLocalData* GetLocalData();
+    static int CleanupLocalData();
 
-	static int  Prepare(asIThreadManager *externalThreadMgr);
-	static void Unprepare();
+    static int Prepare(asIThreadManager* externalThreadMgr);
+    static void Unprepare();
 
-	// This read/write lock can be used by the application to provide simple synchronization
-	DECLAREREADWRITELOCK(appRWLock)
+    // This read/write lock can be used by the application to provide simple synchronization
+    DECLAREREADWRITELOCK(appRWLock)
 
-protected:
-	asCThreadManager();
-	~asCThreadManager();
+  protected:
+    asCThreadManager();
+    ~asCThreadManager();
 
-	// No need to use the atomic int here, as it will only be
-	// updated within the thread manager's critical section
-	int refCount;
+    // No need to use the atomic int here, as it will only be
+    // updated within the thread manager's critical section
+    int refCount;
 
 #ifndef AS_NO_THREADS
-#if defined(_MSC_VER) && defined(AS_WINDOWS_THREADS) && (WINAPI_FAMILY & WINAPI_FAMILY_PHONE_APP)
-	// On Windows Store we must use MSVC specific thread variables for thread
-	// local storage, as the TLS API isn't available. On desktop we can't use
-	// this as it may cause problems if the library is used in a dll.
-	// ref: http://msdn.microsoft.com/en-us/library/2s9wt68x.aspx
-	// ref: http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
-	__declspec(thread) static asCThreadLocalData *tld;
+    #if defined(_MSC_VER) && defined(AS_WINDOWS_THREADS) && (WINAPI_FAMILY & WINAPI_FAMILY_PHONE_APP)
+    // On Windows Store we must use MSVC specific thread variables for thread
+    // local storage, as the TLS API isn't available. On desktop we can't use
+    // this as it may cause problems if the library is used in a dll.
+    // ref: http://msdn.microsoft.com/en-us/library/2s9wt68x.aspx
+    // ref: http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
+    __declspec(thread) static asCThreadLocalData* tld;
+    #else
+    asDWORD tlsKey;
+    #endif
+    DECLARECRITICALSECTION(criticalSection)
 #else
-	asDWORD tlsKey;
-#endif
-	DECLARECRITICALSECTION(criticalSection);
-#else
-	asCThreadLocalData *tld;
+    asCThreadLocalData* tld;
 #endif
 };
 
@@ -92,15 +91,15 @@ class asIScriptContext;
 
 class asCThreadLocalData
 {
-public:
-	asCArray<asIScriptContext *> activeContexts;
-	asCString string;
+  public:
+    asCArray<asIScriptContext*> activeContexts;
+    asCString string;
 
-protected:
-	friend class asCThreadManager;
+  protected:
+    friend class asCThreadManager;
 
-	asCThreadLocalData();
-	~asCThreadLocalData();
+    asCThreadLocalData();
+    ~asCThreadLocalData();
 };
 
 END_AS_NAMESPACE

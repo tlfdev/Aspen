@@ -711,6 +711,14 @@ bool [[nodiscard]] World::DoCommand(Player* mobile, const std::string args)
     if (args.empty())
         return false;
 
+    // Input sanitization: limit command length to prevent DoS
+    constexpr size_t MAX_COMMAND_LENGTH = 8192;
+    if (args.length() > MAX_COMMAND_LENGTH)
+    {
+        mobile->Message(MSG_ERROR, "Command too long.");
+        return false;
+    }
+
     const auto t0 = clock::now();
 
     const std::vector<Command*>* cptr = commands.GetPtr();

@@ -202,7 +202,24 @@ bool Player::Save(bool force)
         _lastSave = time(nullptr);
     }
 
-    std::string path = std::string(PLAYER_DIR) + GetName() + ".json";
+    // Sanitize player name to prevent path traversal
+    std::string safeName = GetName();
+    // Remove any path separators or parent directory references
+    size_t pos;
+    while ((pos = safeName.find('/')) != std::string::npos)
+    {
+        safeName.erase(pos, 1);
+    }
+    while ((pos = safeName.find('\\')) != std::string::npos)
+    {
+        safeName.erase(pos, 1);
+    }
+    while ((pos = safeName.find("..")) != std::string::npos)
+    {
+        safeName.erase(pos, 2);
+    }
+
+    std::string path = std::string(PLAYER_DIR) + safeName + ".json";
     return JsonFileSerializer::SaveToFile(path, *this, "Player");
 }
 
@@ -220,7 +237,24 @@ bool Player::Backup()
 
 void Player::Load()
 {
-    std::string path = std::string(PLAYER_DIR) + GetName() + ".json";
+    // Sanitize player name to prevent path traversal
+    std::string safeName = GetName();
+    // Remove any path separators or parent directory references
+    size_t pos;
+    while ((pos = safeName.find('/')) != std::string::npos)
+    {
+        safeName.erase(pos, 1);
+    }
+    while ((pos = safeName.find('\\')) != std::string::npos)
+    {
+        safeName.erase(pos, 1);
+    }
+    while ((pos = safeName.find("..")) != std::string::npos)
+    {
+        safeName.erase(pos, 2);
+    }
+
+    std::string path = std::string(PLAYER_DIR) + safeName + ".json";
     if (!JsonFileSerializer::LoadFromFile(path, *this, "Player"))
     {
         throw(FileLoadException("Error loading player: " + GetName()));

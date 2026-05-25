@@ -739,21 +739,23 @@ point& point::operator=(point& p)
     return *this;
 }
 
+// Static random number generator - initialized once for performance
+static std::mt19937& GetRNG()
+{
+    static std::random_device rd;
+    static std::mt19937 rgen(rd());
+    return rgen;
+}
+
 int RandomPercent()
 {
-    std::random_device engine;
-    std::mt19937 rgen(engine());
     std::uniform_int_distribution<int> dist(1, 100);
-    auto generator = std::bind(dist, rgen);
-    return generator();
+    return dist(GetRNG());
 }
 int RandomRange(int bottom, int top)
 {
-    std::random_device engine;
-    std::mt19937 rgen(engine());
     std::uniform_int_distribution<int> dist(bottom, top);
-    auto generator = std::bind(dist, rgen);
-    return generator();
+    return dist(GetRNG());
 }
 
 bool iequals(const std::string& a, const std::string& b)

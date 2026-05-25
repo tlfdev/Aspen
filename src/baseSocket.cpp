@@ -34,7 +34,7 @@ int BaseSocket::GetControl() const
 
 bool BaseSocket::Read()
 {
-    char temp[4096 + 2];
+    char temp[4096 + 1];
     int size = 0;
     int k = 0;
     std::string line;
@@ -44,6 +44,11 @@ bool BaseSocket::Read()
         size = recv(_control, temp, 4096, 0);
         if (size > 0)
         {
+            // Ensure we don't overflow buffer - size should be <= 4096
+            if (size > 4096)
+            {
+                size = 4096;
+            }
             temp[size] = '\0'; // sets the last byte we received to null.
             // iterate through the list and add that to the std::string
             for (k = 0; k < size; k++)

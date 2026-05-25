@@ -1,24 +1,24 @@
 /*
    AngelCode Scripting Library
-   Copyright (c) 2003-2015 Andreas Jonsson
+   Copyright (c) 2003-2025 Andreas Jonsson
 
-   This software is provided 'as-is', without any express or implied 
-   warranty. In no event will the authors be held liable for any 
+   This software is provided 'as-is', without any express or implied
+   warranty. In no event will the authors be held liable for any
    damages arising from the use of this software.
 
-   Permission is granted to anyone to use this software for any 
-   purpose, including commercial applications, and to alter it and 
+   Permission is granted to anyone to use this software for any
+   purpose, including commercial applications, and to alter it and
    redistribute it freely, subject to the following restrictions:
 
-   1. The origin of this software must not be misrepresented; you 
+   1. The origin of this software must not be misrepresented; you
       must not claim that you wrote the original software. If you use
-      this software in a product, an acknowledgment in the product 
+      this software in a product, an acknowledgment in the product
       documentation would be appreciated but is not required.
 
-   2. Altered source versions must be plainly marked as such, and 
+   2. Altered source versions must be plainly marked as such, and
       must not be misrepresented as being the original software.
 
-   3. This notice may not be removed or altered from any source 
+   3. This notice may not be removed or altered from any source
       distribution.
 
    The original version of this library can be located at:
@@ -29,7 +29,6 @@
 */
 
 
-
 //
 // as_objecttype.h
 //
@@ -37,196 +36,136 @@
 //
 
 
-
 #ifndef AS_OBJECTTYPE_H
 #define AS_OBJECTTYPE_H
 
-#include "as_atomic.h"
-#include "as_string.h"
-#include "as_property.h"
 #include "as_array.h"
+#include "as_property.h"
 #include "as_scriptfunction.h"
+#include "as_typeinfo.h"
 
 BEGIN_AS_NAMESPACE
 
-// TODO: memory: Need to minimize used memory here, because not all types use all properties of the class
-
-
 struct asSTypeBehaviour
 {
-	asSTypeBehaviour() 
-	{
-		factory = 0;
-		listFactory = 0;
-		copyfactory = 0;
-		construct = 0; 
-		copyconstruct = 0;
-		destruct = 0; 
-		copy = 0; 
-		addref = 0; 
-		release = 0; 
-		gcGetRefCount = 0; 
-		gcSetFlag = 0; 
-		gcGetFlag = 0; 
-		gcEnumReferences = 0; 
-		gcReleaseAllReferences = 0;
-		templateCallback = 0;
-		getWeakRefFlag = 0;
-	}
+    asSTypeBehaviour()
+    {
+        factory = 0;
+        listFactory = 0;
+        copyfactory = 0;
+        construct = 0;
+        copyconstruct = 0;
+        destruct = 0;
+        copy = 0;
+        addref = 0;
+        release = 0;
+        gcGetRefCount = 0;
+        gcSetFlag = 0;
+        gcGetFlag = 0;
+        gcEnumReferences = 0;
+        gcReleaseAllReferences = 0;
+        templateCallback = 0;
+        getWeakRefFlag = 0;
+    }
 
-	int factory;
-	int listFactory; // Used for initialization lists only
-	int copyfactory;
-	int construct;
-	int copyconstruct;
-	int destruct;
-	int copy;
-	int addref;
-	int release;
-	int templateCallback;
+    int factory;
+    int listFactory; // Used for initialization lists only
+    int copyfactory;
+    int construct;
+    int copyconstruct;
+    int destruct;
+    int copy;
+    int addref;
+    int release;
+    int templateCallback;
 
-	// GC behaviours
-	int gcGetRefCount;
-	int gcSetFlag;
-	int gcGetFlag;
-	int gcEnumReferences;
-	int gcReleaseAllReferences;
+    // GC behaviours
+    int gcGetRefCount;
+    int gcSetFlag;
+    int gcGetFlag;
+    int gcEnumReferences;
+    int gcReleaseAllReferences;
 
-	// Weakref behaviours
-	int getWeakRefFlag;
+    // Weakref behaviours
+    int getWeakRefFlag;
 
-	asCArray<int> factories;
-	asCArray<int> constructors;
-};
-
-struct asSEnumValue
-{
-	asCString name;
-	int       value;
+    asCArray<int> factories;
+    asCArray<int> constructors;
 };
 
 class asCScriptEngine;
 struct asSNameSpace;
 
-class asCObjectType : public asIObjectType
+class asCObjectType : public asCTypeInfo
 {
-public:
-//=====================================
-// From asIObjectType
-//=====================================
-	asIScriptEngine *GetEngine() const;
-	const char      *GetConfigGroup() const;
-	asDWORD          GetAccessMask() const;
-	asIScriptModule *GetModule() const;
+  public:
+    asITypeInfo* GetBaseType() const;
+    bool DerivesFrom(const asITypeInfo* objType) const;
+    int GetSubTypeId(asUINT subtypeIndex = 0) const;
+    asITypeInfo* GetSubType(asUINT subtypeIndex = 0) const;
+    asUINT GetSubTypeCount() const;
+    asUINT GetInterfaceCount() const;
+    asITypeInfo* GetInterface(asUINT index) const;
+    bool Implements(const asITypeInfo* objType) const;
+    asUINT GetFactoryCount() const;
+    asIScriptFunction* GetFactoryByIndex(asUINT index) const;
+    asIScriptFunction* GetFactoryByDecl(const char* decl) const;
+    asUINT GetMethodCount() const;
+    asIScriptFunction* GetMethodByIndex(asUINT index, bool getVirtual) const;
+    asIScriptFunction* GetMethodByName(const char* name, bool getVirtual) const;
+    asIScriptFunction* GetMethodByDecl(const char* decl, bool getVirtual) const;
+    asUINT GetPropertyCount() const;
+    int GetProperty(asUINT index, const char** name, int* typeId, bool* isPrivate, bool* isProtected, int* offset,
+                    bool* isReference, asDWORD* accessMask, int* compositeOffset, bool* isCompositeIndirect,
+                    bool* isConst) const;
+    const char* GetPropertyDeclaration(asUINT index, bool includeNamespace = false) const;
+    asUINT GetBehaviourCount() const;
+    asIScriptFunction* GetBehaviourByIndex(asUINT index, asEBehaviours* outBehaviour) const;
+    asUINT GetChildFuncdefCount() const;
+    asITypeInfo* GetChildFuncdef(asUINT index) const;
 
-	// Memory management
-	int AddRef() const;
-	int Release() const;
+  public:
+    asCObjectType(asCScriptEngine* engine);
+    ~asCObjectType();
+    void DestroyInternal();
 
-	// Type info
-	const char      *GetName() const;
-	const char      *GetNamespace() const;
-	asIObjectType   *GetBaseType() const;
-	bool             DerivesFrom(const asIObjectType *objType) const;
-	asDWORD          GetFlags() const;
-	asUINT           GetSize() const;
-	int              GetTypeId() const;
-	int              GetSubTypeId(asUINT subtypeIndex = 0) const;
-	asIObjectType   *GetSubType(asUINT subtypeIndex = 0) const;
-	asUINT           GetSubTypeCount() const;
+    void ReleaseAllFunctions();
 
-	// Interfaces
-	asUINT           GetInterfaceCount() const;
-	asIObjectType   *GetInterface(asUINT index) const;
-	bool             Implements(const asIObjectType *objType) const;
+    bool IsInterface() const;
 
-	// Factories
-	asUINT             GetFactoryCount() const;
-	asIScriptFunction *GetFactoryByIndex(asUINT index) const;
-	asIScriptFunction *GetFactoryByDecl(const char *decl) const;
+    asCObjectProperty* AddPropertyToClass(const asCString& name, const asCDataType& dt, bool isPrivate,
+                                          bool isProtected, bool isInherited);
+    void ReleaseAllProperties();
 
-	// Methods
-	asUINT             GetMethodCount() const;
-	asIScriptFunction *GetMethodByIndex(asUINT index, bool getVirtual) const;
-	asIScriptFunction *GetMethodByName(const char *name, bool getVirtual) const;
-	asIScriptFunction *GetMethodByDecl(const char *decl, bool getVirtual) const;
-
-	// Properties
-	asUINT      GetPropertyCount() const;
-	int         GetProperty(asUINT index, const char **name, int *typeId, bool *isPrivate, bool *isProtected, int *offset, bool *isReference, asDWORD *accessMask) const;
-	const char *GetPropertyDeclaration(asUINT index, bool includeNamespace = false) const;
-
-	// Behaviours
-	asUINT             GetBehaviourCount() const;
-	asIScriptFunction *GetBehaviourByIndex(asUINT index, asEBehaviours *outBehaviour) const;
-
-	// User data
-	void *SetUserData(void *data, asPWORD type);
-	void *GetUserData(asPWORD type) const;
-
-//===========================================
-// Internal
-//===========================================
-public:
-	asCObjectType(asCScriptEngine *engine);
-	~asCObjectType();
-	void DestroyInternal();
-
-	// Keep an internal reference counter to separate references coming from 
-	// application or script objects and references coming from the script code
-	int AddRefInternal();
-	int ReleaseInternal();
-
-	void ReleaseAllFunctions();
-
-	bool IsInterface() const;
-	bool IsShared() const;
-
-	asCObjectProperty *AddPropertyToClass(const asCString &name, const asCDataType &dt, bool isPrivate, bool isProtected, bool isInherited);
-	void ReleaseAllProperties();
-
-	asCString                    name;
-	asSNameSpace                *nameSpace;
-	int                          size;
 #ifdef WIP_16BYTE_ALIGN
-	int                          alignment;
+    int alignment;
 #endif
-	mutable int                  typeId;
-	asCArray<asCObjectProperty*> properties;
-	asCArray<int>                methods;
-	asCArray<asCObjectType*>     interfaces;
-	asCArray<asUINT>             interfaceVFTOffsets;
-	asCArray<asSEnumValue*>      enumValues;
-	asCObjectType *              derivedFrom;
-	asCArray<asCScriptFunction*> virtualFunctionTable;
+    asCArray<asCObjectProperty*> properties;
+    asCArray<int> methods;
 
-	asDWORD flags;
-	asDWORD accessMask;
+    // TODO: These are not used by template types. Should perhaps create a derived class to save memory on ordinary
+    // object types
+    asCArray<asCObjectType*> interfaces;
+    asCArray<asUINT> interfaceVFTOffsets;
+    asCObjectType* derivedFrom;
+    asCArray<asCScriptFunction*> virtualFunctionTable;
 
-	asSTypeBehaviour beh;
+    // Used for funcdefs declared as members of class.
+    // TODO: child funcdef: Should be possible to enumerate these from application
+    asCArray<asCFuncdefType*> childFuncDefs;
 
-	// Used for template types
-	asCArray<asCDataType> templateSubTypes;
-	bool                  acceptValueSubType;
-	bool                  acceptRefSubType;
+    asSTypeBehaviour beh;
 
-	// Store the script section where the code was declared
-	int                             scriptSectionIdx;
-	// Store the location where the function was declared (row in the lower 20 bits, and column in the upper 12)
-	int                             declaredAt;
+    // Used for template types
+    asCArray<asCDataType> templateSubTypes; // increases refCount for typeinfo held in datatype
+    bool acceptValueSubType;
+    bool acceptRefSubType;
 
-	asCScriptEngine  *engine;
-	asCModule        *module;
-	asCArray<asPWORD> userData;
-
-protected:
-	friend class asCScriptEngine;
-	friend class asCConfigGroup;
-	friend class asCModule;
-	asCObjectType();
-
-	mutable asCAtomic externalRefCount;
-	asCAtomic         internalRefCount;
+  protected:
+    friend class asCScriptEngine;
+    friend class asCConfigGroup;
+    friend class asCModule;
+    asCObjectType();
 };
 
 END_AS_NAMESPACE

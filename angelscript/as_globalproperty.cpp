@@ -1,24 +1,24 @@
 /*
    AngelCode Scripting Library
-   Copyright (c) 2003-2014 Andreas Jonsson
+   Copyright (c) 2003-2015 Andreas Jonsson
 
-   This software is provided 'as-is', without any express or implied 
-   warranty. In no event will the authors be held liable for any 
+   This software is provided 'as-is', without any express or implied
+   warranty. In no event will the authors be held liable for any
    damages arising from the use of this software.
 
-   Permission is granted to anyone to use this software for any 
-   purpose, including commercial applications, and to alter it and 
+   Permission is granted to anyone to use this software for any
+   purpose, including commercial applications, and to alter it and
    redistribute it freely, subject to the following restrictions:
 
-   1. The origin of this software must not be misrepresented; you 
+   1. The origin of this software must not be misrepresented; you
       must not claim that you wrote the original software. If you use
-      this software in a product, an acknowledgment in the product 
+      this software in a product, an acknowledgment in the product
       documentation would be appreciated but is not required.
 
-   2. Altered source versions must be plainly marked as such, and 
+   2. Altered source versions must be plainly marked as such, and
       must not be misrepresented as being the original software.
 
-   3. This notice may not be removed or altered from any source 
+   3. This notice may not be removed or altered from any source
       distribution.
 
    The original version of this library can be located at:
@@ -29,109 +29,113 @@
 */
 
 
-
-
 #include "as_config.h"
 #include "as_property.h"
 #include "as_scriptengine.h"
 
 BEGIN_AS_NAMESPACE
 
-asCGlobalProperty::asCGlobalProperty() 
-{ 
-	memory          = &storage; 
-	memoryAllocated = false; 
-	realAddress     = 0; 
-	initFunc        = 0;
-	accessMask      = 0xFFFFFFFF;
+asCGlobalProperty::asCGlobalProperty()
+{
+    memory = &storage;
+    memoryAllocated = false;
+    realAddress = 0;
+    initFunc = 0;
+    accessMask = 0xFFFFFFFF;
 
-	refCount.set(1);
+    refCount.set(1);
 }
 
 asCGlobalProperty::~asCGlobalProperty()
-{ 
+{
 #ifndef WIP_16BYTE_ALIGNED
-	if( memoryAllocated ) { asDELETEARRAY(memory); } 
+    if (memoryAllocated)
+    {
+        asDELETEARRAY(memory);
+    }
 #else
-	if( memoryAllocated ) { asDELETEARRAYALIGNED(memory); } 
+    if (memoryAllocated)
+    {
+        asDELETEARRAYALIGNED(memory);
+    }
 #endif
 
-	if( initFunc )
-		initFunc->ReleaseInternal();
+    if (initFunc)
+        initFunc->ReleaseInternal();
 }
 
 void asCGlobalProperty::AddRef()
 {
-	refCount.atomicInc();
+    refCount.atomicInc();
 }
 
 void asCGlobalProperty::Release()
 {
-	if( refCount.atomicDec() == 0 )
-		asDELETE(this, asCGlobalProperty);
+    if (refCount.atomicDec() == 0)
+        asDELETE(this, asCGlobalProperty);
 }
 
 void asCGlobalProperty::DestroyInternal()
 {
-	if( initFunc )
-	{
-		initFunc->ReleaseInternal();
-		initFunc = 0;
-	}
+    if (initFunc)
+    {
+        initFunc->ReleaseInternal();
+        initFunc = 0;
+    }
 }
 
-void *asCGlobalProperty::GetAddressOfValue()
-{ 
-	return memory;
+void* asCGlobalProperty::GetAddressOfValue()
+{
+    return memory;
 }
 
 // The global property structure is responsible for allocating the storage
 // method for script declared variables. Each allocation is independent of
 // other global properties, so that variables can be added and removed at
 // any time.
-void asCGlobalProperty::AllocateMemory() 
-{ 
-	if( type.GetSizeOnStackDWords() > 2 ) 
-	{ 
+void asCGlobalProperty::AllocateMemory()
+{
+    if (type.GetSizeOnStackDWords() > 2)
+    {
 #ifndef WIP_16BYTE_ALIGNED
-		memory = asNEWARRAY(asDWORD, type.GetSizeOnStackDWords()); 
+        memory = asNEWARRAY(asDWORD, type.GetSizeOnStackDWords());
 #else
-		// TODO: Avoid aligned allocation if not needed to reduce the waste of memory for the alignment
-		memory = asNEWARRAYALIGNED(asDWORD, type.GetSizeOnStackDWords(), type.GetAlignment()); 
+        // TODO: Avoid aligned allocation if not needed to reduce the waste of memory for the alignment
+        memory = asNEWARRAYALIGNED(asDWORD, type.GetSizeOnStackDWords(), type.GetAlignment());
 #endif
-		memoryAllocated = true; 
-	} 
+        memoryAllocated = true;
+    }
 }
 
-void asCGlobalProperty::SetRegisteredAddress(void *p) 
-{ 
-	realAddress = p;
-	if( type.IsObject() && !type.IsReference() && !type.IsObjectHandle() )
-	{
-		// The global property is a pointer to a pointer 
-		memory = &realAddress;
-	} 
-	else
-		memory = p; 
-}
-
-void *asCGlobalProperty::GetRegisteredAddress() const
+void asCGlobalProperty::SetRegisteredAddress(void* p)
 {
-	return realAddress;
+    realAddress = p;
+    if (type.IsObject() && !type.IsReference() && !type.IsObjectHandle())
+    {
+        // The global property is a pointer to a pointer
+        memory = &realAddress;
+    }
+    else
+        memory = p;
 }
 
-void asCGlobalProperty::SetInitFunc(asCScriptFunction *initFunc)
+void* asCGlobalProperty::GetRegisteredAddress() const
 {
-	// This should only be done once
-	asASSERT( this->initFunc == 0 );
-
-	this->initFunc = initFunc;
-	this->initFunc->AddRefInternal();
+    return realAddress;
 }
 
-asCScriptFunction *asCGlobalProperty::GetInitFunc()
+void asCGlobalProperty::SetInitFunc(asCScriptFunction* in_initFunc)
 {
-	return initFunc;
+    // This should only be done once
+    asASSERT(initFunc == 0);
+
+    initFunc = in_initFunc;
+    initFunc->AddRefInternal();
+}
+
+asCScriptFunction* asCGlobalProperty::GetInitFunc()
+{
+    return initFunc;
 }
 
 END_AS_NAMESPACE
